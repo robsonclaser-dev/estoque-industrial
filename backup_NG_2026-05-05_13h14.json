@@ -1,0 +1,224 @@
+{
+  "projects": [
+    {
+      "number": "2022615-222255 E518A",
+      "orderNumber": "810574",
+      "group": "1773258605137",
+      "status": "ativo",
+      "client": "IMPASA",
+      "arrival": "2026-03-11",
+      "deadline": "2026-03-11",
+      "nf": "63294",
+      "totalWeight": 11700,
+      "drawings": [
+        {
+          "id": 1773258900464,
+          "name": "2070062692",
+          "pieces": [
+            {
+              "id": 1773258949801,
+              "name": "24 - CHAPA NERVURA",
+              "position": "4",
+              "measure": "9,5 X 140 X 2614mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            },
+            {
+              "id": 1773258996848,
+              "name": "1 - CHAPA SAIA",
+              "position": "1",
+              "measure": "9,5 X 9144 X 6951mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            }
+          ]
+        }
+      ],
+      "value": 0,
+      "id": 1773258867305,
+      "os": 17,
+      "nfsSaida": [],
+      "shipments": [],
+      "valueLocked": false,
+      "archived": false,
+      "archivedDate": null
+    },
+    {
+      "number": "2022616-222256 - E518B",
+      "orderNumber": "810575",
+      "group": "1773258605137",
+      "status": "ativo",
+      "client": "IMPASA",
+      "arrival": "2026-03-11",
+      "deadline": "2026-03-11",
+      "nf": "63294",
+      "totalWeight": 0,
+      "drawings": [
+        {
+          "id": 1773259510688,
+          "name": "2070062692-1",
+          "pieces": [
+            {
+              "id": 1773259555816,
+              "name": "24-CHAPA NERVURA",
+              "position": "4",
+              "measure": "9,5 X 140 X 261mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            }
+          ]
+        }
+      ],
+      "value": 0,
+      "id": 1773259406881,
+      "os": 18,
+      "nfsSaida": [],
+      "shipments": [],
+      "valueLocked": false,
+      "archived": false,
+      "archivedDate": null
+    },
+    {
+      "number": "2022617 - 222257 - E708",
+      "orderNumber": "810576",
+      "group": "1773258605137",
+      "status": "ativo",
+      "client": "IMPASA",
+      "arrival": "2026-03-11",
+      "deadline": "2026-03-11",
+      "nf": "63294",
+      "totalWeight": 0,
+      "drawings": [
+        {
+          "id": 1773259685376,
+          "name": "1070089063-2",
+          "pieces": [
+            {
+              "id": 1773259725993,
+              "name": "32- CHAPA NERVURA",
+              "position": "5",
+              "measure": "9,5 X 140 X 261mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            }
+          ]
+        }
+      ],
+      "value": 0,
+      "id": 1773259633080,
+      "os": 19,
+      "nfsSaida": [],
+      "shipments": [],
+      "valueLocked": false,
+      "archived": false,
+      "archivedDate": null
+    },
+    {
+      "number": "2022618-222258 - E711",
+      "orderNumber": "810577",
+      "group": "1773258605137",
+      "status": "ativo",
+      "client": "IMPASA",
+      "arrival": "2026-03-11",
+      "deadline": "2026-03-11",
+      "nf": "63294",
+      "totalWeight": 0,
+      "drawings": [
+        {
+          "id": 1773259834008,
+          "name": "1070089063-1",
+          "pieces": [
+            {
+              "id": 1773259878176,
+              "name": "32 - CHAPA NERVURA",
+              "position": "5",
+              "measure": "9,5 X 140 X 261mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            },
+            {
+              "id": 1773259917937,
+              "name": "1 - CHAPA SAIA",
+              "position": "1",
+              "measure": "12,5 X 700 X 10092mm",
+              "material": "CARBONO",
+              "destination": "Caldeiraria",
+              "received": true,
+              "receivedDate": "2026-03-11",
+              "nf": "63294",
+              "sentToCaldeiraria": false,
+              "caldeirariaDate": null,
+              "weight": 0,
+              "value": 0,
+              "semNF": false
+            }
+          ]
+        }
+      ],
+      "value": 0,
+      "id": 1773259811848,
+      "os": 20,
+      "nfsSaida": [],
+      "shipments": [],
+      "valueLocked": false,
+      "archived": false,
+      "archivedDate": null
+    }
+  ],
+  "osCounter": 21,
+  "companyGroups": [
+    {
+      "name": "NG",
+      "color": "#28a745",
+      "clients": [
+        "IMPASA"
+      ],
+      "id": 1773258605137
+    }
+  ],
+  "backupConfig": {
+    "enabled": true,
+    "time": "16:05",
+    "lastBackup": "2026-03-11"
+  }
+}
