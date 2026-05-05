@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estoque Industrial</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--surface:#fff;--primary:#e65c00;--primary-dark:#bf4c00;
+  --text:#1a1a1a;--muted:#6b7280;--border:#e2e4e8;
+  --success:#16a34a;--danger:#dc2626;--warning:#d97706;--info:#0284c7;
+  --cal:#b45309;--jat:#1d4ed8;--pin:#166534;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);--r:6px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+header{background:#1a1a1a;color:#fff;padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+header .logo{font-size:17px;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+header .logo span{color:var(--primary)}
+.header-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+nav{background:#222;display:flex;border-bottom:2px solid var(--primary);overflow-x:auto}
+nav button{background:none;border:none;color:#999;padding:11px 14px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+nav button:hover{color:#fff;background:#2a2a2a}
+nav button.active{color:var(--primary);border-bottom-color:var(--primary)}
+main{padding:18px;max-width:1350px;margin:0 auto}
+.sec{display:none}.sec.active{display:block}
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--surface);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);border-left:4px solid var(--primary)}
+.card.danger{border-left-color:var(--danger)}.card.success{border-left-color:var(--success)}.card.warn{border-left-color:var(--warning)}.card.info{border-left-color:var(--info)}
+.card-lbl{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.5px;font-weight:600}
+.card-val{font-size:24px;font-weight:700;margin:4px 0 2px}
+.card-sub{font-size:11px;color:var(--muted)}
+/* Panel */
+.panel{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.panel-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-title{font-size:14px;font-weight:700}
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:#f8f9fa;padding:9px 11px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:8px 11px;border-bottom:1px solid #f3f4f6;font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbfc}
+.empty{padding:36px;text-align:center;color:var(--muted);font-size:13px}
+/* Badges */
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.bdg-cal{background:#fef3c7;color:var(--cal)}.bdg-jat{background:#dbeafe;color:var(--jat)}
+.bdg-pin{background:#dcfce7;color:var(--pin)}.bdg-ger{background:#f3f4f6;color:#374151}
+.bdg-ent{background:#dcfce7;color:var(--success)}.bdg-sai{background:#fee2e2;color:var(--danger)}
+.bdg-ajt{background:#e0e7ff;color:#3730a3}.bdg-ok{background:#dcfce7;color:var(--success)}
+.bdg-alr{background:#fee2e2;color:var(--danger)}.bdg-low{background:#fef3c7;color:var(--warning)}
+/* Buttons */
+.btn{padding:8px 15px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .15s;line-height:1}
+.btn-pri{background:var(--primary);color:#fff}.btn-pri:hover{background:var(--primary-dark)}
+.btn-sec{background:#e5e7eb;color:var(--text)}.btn-sec:hover{background:#d1d5db}
+.btn-dan{background:var(--danger);color:#fff}.btn-dan:hover{background:#b91c1c}
+.btn-suc{background:var(--success);color:#fff}.btn-suc:hover{background:#15803d}
+.btn-war{background:var(--warning);color:#fff}.btn-war:hover{background:#b45309}
+.btn-info{background:var(--info);color:#fff}.btn-info:hover{background:#0369a1}
+.btn-purple{background:#7c3aed;color:#fff}.btn-purple:hover{background:#6d28d9}
+.btn-dark{background:#374151;color:#fff;font-size:12px;padding:6px 11px}.btn-dark:hover{background:#1f2937}
+.btn-sm{padding:5px 11px;font-size:12px}.btn-xs{padding:2px 7px;font-size:11px}
+/* Form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.fg input,.fg select,.fg textarea{border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:14px;color:var(--text);transition:border .15s;background:#fff;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--primary)}
+.fg.span2{grid-column:span 2}.fg.span3{grid-column:span 3}
+.form-footer{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:22px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-title{font-size:15px;font-weight:800;margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--border)}
+.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)}.modal-close:hover{color:var(--text)}
+/* Search */
+.bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.srch{border:1px solid var(--border);border-radius:var(--r);padding:7px 11px;font-size:13px;width:190px;background:#fff}
+.srch:focus{outline:none;border-color:var(--primary)}
+select.fsel{border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;font-size:13px;background:#fff;color:var(--text)}
+/* Section */
+.sec-title{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+/* Charts */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
+.chart-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px}
+/* Row actions */
+.row-actions{display:flex;gap:3px}
+/* Qtd */
+.qtd-display{font-weight:700}
+.qtd-ok{color:var(--success)}.qtd-low{color:var(--warning)}.qtd-danger{color:var(--danger)}
+/* Info box */
+.info-box{background:#f0f9ff;border-left:3px solid #38bdf8;border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#0369a1}
+.warn-box{background:#fffbeb;border-left:3px solid var(--warning);border-radius:4px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#92400e}
+/* Alerta row */
+.alerta-row td{background:#fff8f8}
+/* Top bar */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+/* Relatórios grid */
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}
+.rel-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px;border-top:3px solid var(--primary)}
+.rel-card.excel{border-top-color:#16a34a}
+.rel-card.backup{border-top-color:#7c3aed}
+.rel-card h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.rel-card p{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.rel-card .rel-btns{display:flex;flex-direction:column;gap:7px}
+/* Ajuste */
+.ajuste-info{background:#f8f9fa;border-radius:var(--r);padding:12px 14px;margin:12px 0;font-size:13px}
+.ajuste-info b{color:var(--primary);font-size:16px}
+/* Confirm */
+.confirm-modal{max-width:380px}
+.confirm-msg{font-size:13px;margin-bottom:18px;line-height:1.6}
+/* Responsive */
+@media(max-width:900px){#dash-charts-row{grid-template-columns:1fr 1fr!important}}@media(max-width:700px){#dash-charts-row{grid-template-columns:1fr!important}.charts-row{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.fg.span2,.fg.span3{grid-column:span 1}.rel-grid{grid-template-columns:1fr}}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#f1f1f1}::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+/* Banco dropdown */
+.banco-dropdown{position:absolute;z-index:9999;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:340px;overflow-y:auto;width:100%;left:0;top:100%}
+.banco-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;gap:10px}
+.banco-item:last-child{border-bottom:none}
+.banco-item:hover,.banco-item.sel{background:#fff7ed}
+.banco-item .bi-nome{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.banco-item .bi-desc{font-size:11px;color:var(--muted);margin-top:1px;line-height:1.4}
+.banco-item .bi-tags{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.banco-item .bi-un{background:#f3f4f6;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700;color:#374151}
+.banco-item .bi-cat{border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700;background:#fff7ed;color:var(--primary)}
+.banco-secao{padding:5px 12px;background:#f8f9fa;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.ent-item-wrap{position:relative}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚙️ ESTOQUE <span>INDUSTRIAL</span></div>
+  <div class="header-actions">
+    <button class="btn btn-dark" onclick="fazerBackup()" title="Salvar backup JSON">💾 Backup</button>
+    <button class="btn btn-dark" onclick="document.getElementById('inp-restore').click()" title="Restaurar backup">📥 Restaurar</button>
+    <button class="btn" style="background:#1a73e8;color:#fff;font-size:12px;padding:6px 11px" onclick="driveBackup()" title="Salvar no Google Drive">
+      <svg width="14" height="14" viewBox="0 0 87.3 78" style="vertical-align:middle;margin-right:4px"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.95-1.2-4.5-1.2h-18.5c-1.55 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.95 1.2 4.5 1.2h50.8c1.55 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+      Drive
+    </button>
+    <input type="file" id="inp-restore" accept=".json" style="display:none" onchange="restaurarBackup(event)">
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="goTab('dash')">📊 Dashboard</button>
+  <button onclick="goTab('itens')">📦 Itens</button>
+  <button onclick="goTab('entrada')">⬇️ Entrada</button>
+  <button onclick="goTab('saida')">⬆️ Saída</button>
+  <button onclick="goTab('ajuste')">🔧 Ajuste</button>
+  <button onclick="goTab('hist')">📋 Histórico</button>
+  <button onclick="goTab('relatorios')">📄 Relatórios</button>
+  <button onclick="goTab('forn')">🏭 Fornecedores</button>
+</nav>
+
+<main>
+
+<!-- ======= DASHBOARD ======= -->
+<div class="sec active" id="sec-dash">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="sec-title">📦 Estoque Real</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input class="srch" id="srch-dash" placeholder="🔍 Filtrar item..." oninput="renderDash()">
+      <select class="fsel" id="flt-dash-setor" onchange="renderDash()">
+        <option value="">Todos os Setores</option>
+        <option value="caldeiraria">Caldeiraria</option>
+        <option value="jateamento">Jateamento</option>
+        <option value="pintura">Pintura</option>
+        <option value="geral">Geral</option>
+      </select>
+      <select class="fsel" id="flt-dash-status" onchange="renderDash()">
+        <option value="">Todos</option>
+        <option value="alerta">Somente Alertas</option>
+        <option value="ok">Somente OK</option>
+      </select>
+      <select class="fsel" id="flt-dash-grupo" onchange="renderDash()">
+        <option value="lista">🔲 Lista</option>
+        <option value="setor">🗂️ Agrupar por Setor</option>
+      </select>
+      <button class="btn btn-sec btn-sm" onclick="renderDash()">↻ Atualizar</button>
+    </div>
+  </div>
+  <!-- Cards -->
+  <div class="cards" id="dash-cards"></div>
+  <!-- Gráficos -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px" id="dash-charts-row">
+    <div class="chart-card"><div class="chart-title">Estoque Atual por Item</div><canvas id="chartEstoque" height="200"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Entradas × Saídas do Mês por Item</div><canvas id="chartEntSai" height="200"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Distribuição por Setor / Destino</div><canvas id="chartSetor" height="200"></canvas></div>
+  </div>
+  <!-- Tabela -->
+  <div class="panel">
+    <div class="panel-hd">
+      <span class="panel-title">📦 Posição de Estoque</span>
+      <span id="dash-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div id="dash-estoque-wrap"></div>
+  </div>
+</div>
+
+<!-- ======= ITENS ======= -->
+<div class="sec" id="sec-itens">
+  <div class="top-bar">
+    <div class="sec-title">📦 Itens Cadastrados</div>
+    <button class="btn btn-pri" onclick="openItemModal()">+ Novo Item</button>
+  </div>
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="bar">
+        <input class="srch" id="srch-itens" placeholder="🔍 Pesquisar..." oninput="renderItens()">
+        <select class="fsel" id="flt-setor" onchange="renderItens()">
+          <option value="">Todos os Setores</option>
+          <option value="caldeiraria">Caldeiraria</option>
+          <option value="jateamento">Jateamento</option>
+          <option value="pintura">Pintura</option>
+          <option value="geral">Geral</option>
+        </select>
+        <select class="fsel" id="flt-status" onchange="renderItens()">
+          <option value="">Todos os Status</option>
+          <option value="alerta">Em Alerta</option>
+          <option value="ok">OK</option>
+        </select>
+      </div>
+      <button class="btn btn-sec btn-sm" onclick="exportItensCSV()">⬇ CSV</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Código</th><th>Descrição</th><th>Setor</th><th>Un.</th><th>Estoque</th><th>Mínimo</th><th>Status</th><th>Fornecedor</th><th>Ações</th></tr></thead>
+      <tbody id="tbl-itens"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ======= ENTRADA ======= -->
+<div class="sec" id="sec-entrada">
+  <div class="sec-title">⬇️ Registrar Entrada</div>
+  <div class="info-box">Registre o recebimento de materiais. O saldo do item é atualizado automaticamente.</div>
+  <div class="panel" style="padding:18px">
+    <div class="form-grid">
+      <div class="fg"><label>Data *</label><input type="date" id="ent-data"></div>
+      <div class="fg"><label>Nota Fiscal / Pedido</label><input type="text" id="ent-nf" placeholder="Ex: NF 12345"></div>
+      <div class="fg"><label>Fornecedor *</label><input type="text" id="ent-forn" list="list-forn" placeholder="Digite ou selecione o fornecedor" autocomplete="off"><datalist id="list-forn"></datalist><small style="color:var(--muted);font-size:10px">Novo fornecedor é cadastrado automaticamente</small></div>
+      <div class="fg span2"><label>Item *</label><div class="ent-item-wrap"><input type="text" id="ent-item-srch" placeholder="Digite para pesquisar item..." oninput="onEntItemSearch()" onkeydown="bancoDdKey(event)" autocomplete="off" style="width:100%"><div id="banco-dropdown" class="banco-dropdown" style="display:none"></div></div><input type="hidden" id="ent-item-id"><small style="color:var(--muted);font-size:10px">Banco com +200 materiais — comece a digitar para ver sugestões</small></div>
+      <div class="fg"><label>Quantidade *</label><input type="number" id="ent-qtd" min="0.01" step="0.01" placeholder="0"></div>
+      <div class="fg"><label>Unidade *</label><input type="text" id="ent-un" list="list-uns-ent" placeholder="UN, m³, KG, LT..." autocomplete="off" style="font-weight:600"><datalist id="list-uns-ent"><option value="UN"><option value="m³"><option value="KG"><option value="LT"><option value="M"><option value="CX"><option value="RL"><option value="PC"><option value="GL"><option value="SC"><option value="PR"></datalist><small style="color:var(--muted);font-size:10px">Preenchido automaticamente pelo cadastro do item</small></div>
+      <div class="fg"><label>Setor / Destino *</label>
+        <select id="ent-setor" style="font-weight:600">
+          <option value="">Selecione...</option>
+          <option value="caldeiraria">🔧 Caldeiraria</option>
+          <option value="jateamento">💨 Jateamento</option>
+          <option value="pintura">🎨 Pintura</option>
+          <option value="geral">⚙️ Geral</option>
+        </select>
+        <small style="color:var(--muted);font-size:10px">Preenchido pelo banco — confirme ou altere</small>
+      </div>
+      <div class="fg"><label>Valor Unitário (R$)</label><input type="number" id="ent-valor" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="fg span2"><label>Observação</label><input type="text" id="ent-obs" placeholder="Opcional"></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-suc" onclick="salvarEntrada()">✔ Registrar Entrada</button>
+      <button class="btn btn-sec" onclick="limparEntrada()">✖ Limpar</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-hd"><span class="panel-title">Entradas Recentes</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>NF</th><th>Item</th><th>Qtd</th><th>Valor Un.</th><th>Total</th><th>Fornecedor</th><th>Obs</th></tr></thead>
+      <tbody id="tbl-entradas-rec"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ======= SAÍDA ======= -->
+<div class="sec" id="sec-saida">
+  <div class="sec-title">⬆️ Registrar Saída</div>
+  <div class="info-box">Registre a retirada por setor e funcionário. Sistema bloqueia se não houver saldo.</div>
+  <div class="panel" style="padding:18px">
+    <div class="form-grid">
+      <div class="fg"><label>Data *</label><input type="date" id="sai-data"></div>
+      <div class="fg"><label>Setor *</label>
+        <select id="sai-setor"><option value="">Selecione...</option><option value="caldeiraria">Caldeiraria</option><option value="jateamento">Jateamento</option><option value="pintura">Pintura</option><option value="geral">Geral</option></select></div>
+      <div class="fg"><label>Funcionário *</label><input type="text" id="sai-func" list="list-funcs" placeholder="Nome do funcionário"><datalist id="list-funcs"></datalist></div>
+      <div class="fg span2"><label>Item *</label><input type="text" id="sai-item-srch" list="list-itens-sai" placeholder="Digite para pesquisar item..." oninput="onSaiItemSearch()"><datalist id="list-itens-sai"></datalist><input type="hidden" id="sai-item-id"></div>
+      <div class="fg"><label>Quantidade *</label><input type="number" id="sai-qtd" min="0.01" step="0.01" placeholder="0"></div>
+      <div class="fg span2"><label>Observação</label><input type="text" id="sai-obs" placeholder="Opcional"></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-war" onclick="salvarSaida()">✔ Registrar Saída</button>
+      <button class="btn btn-sec" onclick="limparSaida()">✖ Limpar</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-hd"><span class="panel-title">Saídas Recentes</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Item</th><th>Qtd</th><th>Setor</th><th>Funcionário</th><th>Obs</th></tr></thead>
+      <tbody id="tbl-saidas-rec"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ======= AJUSTE ======= -->
+<div class="sec" id="sec-ajuste">
+  <div class="sec-title">🔧 Ajuste de Estoque</div>
+  <div class="warn-box">Use para corrigir erros de lançamento ou divergências encontradas no inventário físico. Toda correção é registrada no histórico.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <!-- Ajuste de saldo -->
+    <div class="panel" style="padding:18px">
+      <div class="modal-title" style="position:static;font-size:14px;font-weight:800">Corrigir Saldo de um Item</div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Item *</label>
+        <input type="text" id="ajt-item-srch" list="list-itens-ajt" placeholder="Digite para pesquisar..." oninput="onAjtItemSearch()">
+        <datalist id="list-itens-ajt"></datalist>
+        <input type="hidden" id="ajt-item-id">
+      </div>
+      <div class="ajuste-info" id="ajt-info" style="display:none">
+        Saldo atual: <b id="ajt-saldo-atual">—</b>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr">
+        <div class="fg">
+          <label>Novo Saldo Correto *</label>
+          <input type="number" id="ajt-novo-saldo" min="0" step="0.01" placeholder="0" oninput="calcDiff()">
+        </div>
+        <div class="fg">
+          <label>Diferença</label>
+          <input type="text" id="ajt-diff" readonly style="background:#f8f9fa;font-weight:700">
+        </div>
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <label>Motivo da Correção *</label>
+        <input type="text" id="ajt-motivo" placeholder="Ex: Divergência no inventário físico">
+      </div>
+      <div class="fg" style="margin-top:10px">
+        <label>Data</label>
+        <input type="date" id="ajt-data">
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-purple" onclick="salvarAjuste()">✔ Aplicar Correção</button>
+        <button class="btn btn-sec" onclick="limparAjuste()">✖ Limpar</button>
+      </div>
+    </div>
+    <!-- Estornar última -->
+    <div class="panel" style="padding:18px">
+      <div class="modal-title" style="position:static;font-size:14px;font-weight:800">Estornar Movimentação</div>
+      <div class="info-box" style="margin-bottom:12px">Selecione a movimentação a ser estornada. Um lançamento inverso será criado automaticamente.</div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Pesquisar Movimentação</label>
+        <input class="srch" style="width:100%" id="srch-estorno" placeholder="🔍 Item ou data..." oninput="renderEstorno()">
+      </div>
+      <div class="tbl-wrap" style="max-height:340px;overflow-y:auto"><table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Qtd</th><th></th></tr></thead>
+        <tbody id="tbl-estorno"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= HISTÓRICO ======= -->
+<div class="sec" id="sec-hist">
+  <div class="top-bar">
+    <div class="sec-title">📋 Histórico de Movimentações</div>
+    <button class="btn btn-sec btn-sm" onclick="exportHistCSV()">⬇ CSV</button>
+  </div>
+  <div class="panel">
+    <div class="panel-hd">
+      <div class="bar">
+        <input class="srch" id="srch-hist" placeholder="🔍 Pesquisar item..." oninput="renderHist()">
+        <select class="fsel" id="flt-hist-tipo" onchange="renderHist()">
+          <option value="">Todos os Tipos</option>
+          <option value="entrada">Entradas</option>
+          <option value="saida">Saídas</option>
+          <option value="ajuste">Ajustes</option>
+          <option value="estorno">Estornos</option>
+        </select>
+        <select class="fsel" id="flt-hist-setor" onchange="renderHist()">
+          <option value="">Todos os Setores</option>
+          <option value="caldeiraria">Caldeiraria</option>
+          <option value="jateamento">Jateamento</option>
+          <option value="pintura">Pintura</option>
+          <option value="geral">Geral</option>
+        </select>
+        <input type="month" class="fsel" id="flt-hist-mes" onchange="renderHist()">
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Setor</th><th>Qtd</th><th>Val.Un.</th><th>Total</th><th>NF / Func.</th><th>Fornecedor</th><th>Obs / Motivo</th><th></th></tr></thead>
+      <tbody id="tbl-hist"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ======= RELATÓRIOS ======= -->
+<div class="sec" id="sec-relatorios">
+  <div class="sec-title">📄 Relatórios</div>
+  <div class="rel-grid">
+    <!-- PDF Reports -->
+    <div class="rel-card">
+      <h3>📄 Relatórios PDF</h3>
+      <p>Gere relatórios formatados para impressão ou arquivo.</p>
+      <div class="rel-btns">
+        <button class="btn btn-pri btn-sm" onclick="pdfPosicaoEstoque()">📦 Posição de Estoque</button>
+        <button class="btn btn-pri btn-sm" onclick="pdfAlertas()">🔴 Relatório de Alertas</button>
+        <button class="btn btn-pri btn-sm" onclick="pdfHistoricoMes()">📋 Histórico do Mês</button>
+        <button class="btn btn-pri btn-sm" onclick="pdfConsumoSetor()">📊 Consumo por Setor</button>
+      </div>
+    </div>
+    <!-- Excel Reports -->
+    <div class="rel-card excel">
+      <h3>📊 Exportar para Excel</h3>
+      <p>Planilhas completas com múltiplas abas para análise detalhada.</p>
+      <div class="rel-btns">
+        <button class="btn btn-suc btn-sm" onclick="excelCompleto()">📊 Relatório Completo (todas as abas)</button>
+        <button class="btn btn-suc btn-sm" onclick="excelMovimentacoes()">📋 Movimentações do Mês</button>
+        <button class="btn btn-suc btn-sm" onclick="excelConsumoFuncionario()">👷 Consumo por Funcionário</button>
+        <button class="btn btn-suc btn-sm" onclick="excelItens()">📦 Lista de Itens (posição atual)</button>
+      </div>
+    </div>
+    <!-- Backup -->
+    <div class="rel-card backup">
+      <h3>💾 Backup & Restauração</h3>
+      <p>Salve todos os dados em arquivo JSON ou restaure um backup anterior.</p>
+      <div class="rel-btns">
+        <button class="btn btn-purple btn-sm" onclick="fazerBackup()">💾 Salvar Backup (JSON)</button>
+        <button class="btn btn-purple btn-sm" onclick="document.getElementById('inp-restore').click()">📥 Restaurar Backup</button>
+        <button class="btn btn-dan btn-sm" onclick="confirmarLimparDados()">🗑 Limpar Todos os Dados</button>
+      </div>
+    </div>
+  </div>
+  <!-- Filtro de mês para relatório -->
+  <div class="panel" style="padding:14px">
+    <div class="panel-title" style="margin-bottom:10px">Período para Relatórios de Mês</div>
+    <div class="bar">
+      <label style="font-size:12px;font-weight:600;color:var(--muted)">MÊS:</label>
+      <input type="month" class="fsel" id="rel-mes">
+    </div>
+  </div>
+</div>
+
+<!-- ======= FORNECEDORES ======= -->
+<div class="sec" id="sec-forn">
+  <div class="top-bar">
+    <div class="sec-title">🏭 Fornecedores</div>
+    <button class="btn btn-pri" onclick="openFornModal()">+ Novo Fornecedor</button>
+  </div>
+  <div class="panel">
+    <div class="panel-hd"><input class="srch" id="srch-forn" placeholder="🔍 Pesquisar..." oninput="renderForn()"></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Nome / Empresa</th><th>Contato</th><th>Telefone</th><th>Email</th><th>Observação</th><th>Ações</th></tr></thead>
+      <tbody id="tbl-forn"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ======= MODAL GOOGLE DRIVE ======= -->
+<div class="overlay" id="modal-drive-overlay" onclick="closeDriveModal(event)">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="document.getElementById('modal-drive-overlay').classList.remove('open')">×</button>
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+      <svg width="20" height="20" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.95-1.2-4.5-1.2h-18.5c-1.55 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.95 1.2 4.5 1.2h50.8c1.55 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+      Salvar no Google Drive
+    </div>
+    <!-- Passo 1: configurar Client ID -->
+    <div id="drive-setup" style="display:none">
+      <div class="warn-box" style="margin-bottom:14px">
+        <b>⚙️ Configuração única — 5 minutos</b><br>
+        Necessário criar uma chave gratuita no Google Cloud.
+      </div>
+      <div style="background:#f8f9fa;border-radius:8px;padding:14px;font-size:13px;line-height:1.8;margin-bottom:14px">
+        <b>Passo a passo:</b><br>
+        1. Acesse <a href="https://console.cloud.google.com" target="_blank" style="color:var(--primary)">console.cloud.google.com</a><br>
+        2. Clique em <b>Novo Projeto</b> → nomeie como "Estoque Industrial"<br>
+        3. Menu lateral → <b>APIs e Serviços → Biblioteca</b><br>
+        4. Busque <b>Google Drive API</b> → Ativar<br>
+        5. Menu → <b>Credenciais → Criar credenciais → ID do cliente OAuth</b><br>
+        6. Tipo: <b>Aplicativo da Web</b><br>
+        7. Em "Origens JavaScript autorizadas" adicione: <code style="background:#e5e7eb;padding:2px 5px;border-radius:3px">http://localhost</code> e <code style="background:#e5e7eb;padding:2px 5px;border-radius:3px">null</code><br>
+        8. Copie o <b>ID do cliente</b> e cole abaixo:
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label>Client ID do Google</label>
+        <input type="text" id="drive-client-id" placeholder="xxxxxxxxxx.apps.googleusercontent.com" style="font-size:12px">
+      </div>
+      <div class="fg" style="margin-bottom:14px">
+        <label>Nome da Pasta no Drive (onde salvar)</label>
+        <input type="text" id="drive-folder-name" placeholder="Ex: Estoque Industrial" value="Estoque Industrial">
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-pri" onclick="salvarConfigDrive()">✔ Salvar Configuração</button>
+        <button class="btn btn-sec" onclick="document.getElementById('modal-drive-overlay').classList.remove('open')">Cancelar</button>
+      </div>
+    </div>
+    <!-- Passo 2: pronto para enviar -->
+    <div id="drive-ready" style="display:none">
+      <div style="text-align:center;padding:10px 0 18px">
+        <div style="font-size:40px;margin-bottom:8px">☁️</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">Pronto para enviar!</div>
+        <div style="font-size:13px;color:var(--muted)" id="drive-ready-info"></div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:14px">
+        <b>O que será salvo:</b><br>
+        📄 <b>backup_estoque_HOJE.json</b> — todos os dados do estoque<br>
+        📦 <b>estoque_industrial.html</b> — o próprio sistema
+      </div>
+      <div class="fg" style="margin-bottom:14px">
+        <label>Pasta no Drive</label>
+        <input type="text" id="drive-folder-display" readonly style="background:#f8f9fa;font-weight:600">
+      </div>
+      <div class="form-footer">
+        <button class="btn btn-pri" id="drive-auth-btn" onclick="driveAutenticar()">
+          <svg width="16" height="16" viewBox="0 0 87.3 78" style="vertical-align:middle"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#fff"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#fff"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#fff"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.95-1.2-4.5-1.2h-18.5c-1.55 0-3.15.45-4.5 1.2z" fill="#fff"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.95 1.2 4.5 1.2h50.8c1.55 0 3.15-.45 4.5-1.2z" fill="#fff"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#fff"/></svg>
+          Entrar com Google e Enviar
+        </button>
+        <button class="btn btn-sec btn-sm" onclick="driveReconfigurar()">⚙️ Reconfigurar</button>
+        <button class="btn btn-sec" onclick="document.getElementById('modal-drive-overlay').classList.remove('open')">Fechar</button>
+      </div>
+    </div>
+    <!-- Progresso -->
+    <div id="drive-progress" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:12px;animation:spin 1s linear infinite">⚙️</div>
+      <div id="drive-progress-msg" style="font-size:14px;font-weight:600;color:var(--primary)">Conectando ao Google Drive...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MODAL PREVIEW PDF ======= -->
+<div class="overlay" id="modal-pdf-overlay" onclick="closePdfPreview(event)" style="z-index:500">
+  <div class="modal" style="max-width:860px;height:90vh;display:flex;flex-direction:column;padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
+      <div style="font-size:15px;font-weight:800" id="pdf-preview-title">Visualizar PDF</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-pri btn-sm" id="pdf-download-btn">⬇️ Baixar PDF</button>
+        <button class="btn btn-sec btn-sm" onclick="document.getElementById('modal-pdf-overlay').classList.remove('open')">✖ Fechar</button>
+      </div>
+    </div>
+    <iframe id="pdf-preview-frame" style="flex:1;border:1px solid var(--border);border-radius:6px;width:100%" src="about:blank"></iframe>
+  </div>
+</div>
+
+</main>
+
+<!-- ======= MODAL HISTÓRICO DO ITEM ======= -->
+<div class="overlay" id="modal-item-hist-overlay" onclick="closeItemHistEvt(event)">
+  <div class="modal" style="max-width:860px">
+    <button class="modal-close" onclick="closeItemHistModal()">×</button>
+    <div id="modal-item-hist-content"></div>
+  </div>
+</div>
+
+<!-- ======= MODAL ITEM ======= -->
+<div class="overlay" id="modal-item-overlay" onclick="closeModalItem(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeItemModal()">×</button>
+    <div class="modal-title" id="modal-item-title">Novo Item</div>
+    <input type="hidden" id="item-edit-id">
+    <div class="form-grid">
+      <div class="fg"><label>Código *</label><input type="text" id="item-codigo" placeholder="Ex: DISC-115"></div>
+      <div class="fg"><label>Setor *</label>
+        <select id="item-setor"><option value="">Selecione...</option><option value="caldeiraria">Caldeiraria</option><option value="jateamento">Jateamento</option><option value="pintura">Pintura</option><option value="geral">Geral (todos)</option></select></div>
+      <div class="fg span2"><label>Descrição *</label><input type="text" id="item-desc" placeholder="Ex: Disco de Lixa 115mm Grão 80"></div>
+      <div class="fg"><label>Unidade *</label><input type="text" id="item-un" placeholder="UN, PC, KG, LT..." list="list-uns"><datalist id="list-uns"><option value="UN"><option value="PC"><option value="KG"><option value="LT"><option value="M"><option value="CX"><option value="RL"><option value="PR"><option value="GL"><option value="SC"></datalist></div>
+      <div class="fg"><label>Estoque Atual</label><input type="number" id="item-qtd" min="0" step="0.01" placeholder="0"></div>
+      <div class="fg"><label>Estoque Mínimo *</label><input type="number" id="item-min" min="0" step="0.01" placeholder="0"></div>
+      <div class="fg span2"><label>Fornecedor Principal</label><input type="text" id="item-forn" list="list-forn-item" placeholder="Nome do fornecedor"><datalist id="list-forn-item"></datalist></div>
+      <div class="fg span2"><label>Observação</label><input type="text" id="item-obs" placeholder="Opcional"></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-pri" onclick="salvarItem()">✔ Salvar</button>
+      <button class="btn btn-sec" onclick="closeItemModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MODAL FORNECEDOR ======= -->
+<div class="overlay" id="modal-forn-overlay" onclick="closeModalForn(event)">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" onclick="closeFornModal()">×</button>
+    <div class="modal-title" id="modal-forn-title">Novo Fornecedor</div>
+    <input type="hidden" id="forn-edit-id">
+    <div class="form-grid">
+      <div class="fg span2"><label>Nome / Empresa *</label><input type="text" id="forn-nome"></div>
+      <div class="fg"><label>Contato</label><input type="text" id="forn-contato"></div>
+      <div class="fg"><label>Telefone</label><input type="text" id="forn-tel" placeholder="(19) 99999-9999"></div>
+      <div class="fg span2"><label>E-mail</label><input type="email" id="forn-email"></div>
+      <div class="fg span2"><label>Observação</label><input type="text" id="forn-obs"></div>
+    </div>
+    <div class="form-footer">
+      <button class="btn btn-pri" onclick="salvarForn()">✔ Salvar</button>
+      <button class="btn btn-sec" onclick="closeFornModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MODAL CONFIRM ======= -->
+<div class="overlay" id="modal-confirm-overlay">
+  <div class="modal confirm-modal">
+    <div class="modal-title" id="confirm-title">Confirmar</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="form-footer">
+      <button class="btn btn-dan" id="confirm-ok">Confirmar</button>
+      <button class="btn btn-sec" onclick="closeConfirm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======= STORAGE =======
+const LS={get:k=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch{return[]}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+const K_ITENS='ei_itens',K_MOVS='ei_movs',K_FORN='ei_fornecedores';
+const getItens=()=>LS.get(K_ITENS),getMovs=()=>LS.get(K_MOVS),getForn=()=>LS.get(K_FORN);
+const setItens=d=>LS.set(K_ITENS,d),setMovs=d=>LS.set(K_MOVS,d),setForn=d=>LS.set(K_FORN,d);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+// ======= NAVIGATION =======
+function goTab(tab){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  const tabs=['dash','itens','entrada','saida','ajuste','hist','relatorios','forn'];
+  document.querySelectorAll('nav button')[tabs.indexOf(tab)].classList.add('active');
+  const map={dash:renderDash,itens:renderItens,entrada:setupEntradaForm,saida:setupSaidaForm,ajuste:setupAjuste,hist:renderHist,forn:renderForn,relatorios:setupRel};
+  if(map[tab]) map[tab]();
+}
+
+// ======= UTILS =======
+const fmtDate=d=>{if(!d)return'';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]};
+const fmtNum=n=>parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtQtd=n=>{const v=parseFloat(n||0);return v%1===0?v.toString():v.toFixed(2)};
+const today=()=>new Date().toISOString().slice(0,10);
+const mesAtual=()=>{const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')};
+function setorBadge(s){
+  const m={caldeiraria:'bdg-cal',jateamento:'bdg-jat',pintura:'bdg-pin',geral:'bdg-ger'};
+  const l={caldeiraria:'Caldeiraria',jateamento:'Jateamento',pintura:'Pintura',geral:'Geral'};
+  return`<span class="bdg ${m[s]||'bdg-ger'}">${l[s]||s||'-'}</span>`;
+}
+function tipoBadge(t){
+  if(t==='entrada') return`<span class="bdg bdg-ent">ENTRADA</span>`;
+  if(t==='saida') return`<span class="bdg bdg-sai">SAÍDA</span>`;
+  if(t==='ajuste') return`<span class="bdg bdg-ajt">AJUSTE</span>`;
+  if(t==='estorno') return`<span class="bdg" style="background:#fce7f3;color:#9d174d">ESTORNO</span>`;
+  return`<span class="bdg bdg-ger">${t}</span>`;
+}
+function showToast(msg,type='success'){
+  const d=document.createElement('div');
+  d.style.cssText=`position:fixed;bottom:20px;right:20px;padding:12px 20px;border-radius:6px;color:#fff;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:360px;`;
+  d.style.background={success:'#16a34a',danger:'#dc2626',warning:'#d97706',info:'#0284c7'}[type]||'#374151';
+  d.textContent=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),3500);
+}
+const alert2=m=>showToast(m,'danger'),ok2=m=>showToast(m,'success'),warn2=m=>showToast(m,'warning');
+
+// ======= DASHBOARD =======
+let _chartEstoque=null,_chartEntSai=null,_chartSetor=null;
+function renderDash(){
+  const allItens=getItens(),movs=getMovs(),mes=mesAtual();
+  const movsDoMes=movs.filter(m=>m.data&&m.data.startsWith(mes));
+  const entMes=movsDoMes.filter(m=>m.tipo==='entrada');
+  const saiMes=movsDoMes.filter(m=>m.tipo==='saida');
+  const alertas=allItens.filter(i=>parseFloat(i.qtdMinima||0)>0&&parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0));
+  const zerados=allItens.filter(i=>parseFloat(i.qtdAtual||0)===0);
+  // ---- CARDS ----
+  document.getElementById('dash-cards').innerHTML=`
+    <div class="card"><div class="card-lbl">Total de Itens</div><div class="card-val">${allItens.length}</div><div class="card-sub">no cadastro</div></div>
+    <div class="card danger"><div class="card-lbl">Alertas</div><div class="card-val" style="color:var(--danger)">${alertas.length}</div><div class="card-sub">abaixo do mínimo</div></div>
+    <div class="card danger"><div class="card-lbl">Sem Estoque</div><div class="card-val" style="color:var(--danger)">${zerados.length}</div><div class="card-sub">zerados</div></div>
+    <div class="card success"><div class="card-lbl">Entradas (mês)</div><div class="card-val" style="color:var(--success)">${entMes.length}</div><div class="card-sub">lançamentos</div></div>
+    <div class="card warn"><div class="card-lbl">Saídas (mês)</div><div class="card-val" style="color:var(--warning)">${saiMes.length}</div><div class="card-sub">lançamentos</div></div>
+  `;
+  // ---- FILTERS ----
+  const srch=(document.getElementById('srch-dash')?.value||'').toLowerCase();
+  const setorF=document.getElementById('flt-dash-setor')?.value||'';
+  const statusF=document.getElementById('flt-dash-status')?.value||'';
+  const grupo=document.getElementById('flt-dash-grupo')?.value||'lista';
+  let itens=[...allItens];
+  if(srch) itens=itens.filter(i=>(i.descricao||'').toLowerCase().includes(srch)||(i.codigo||'').toLowerCase().includes(srch));
+  if(setorF) itens=itens.filter(i=>i.setor===setorF);
+  if(statusF==='alerta') itens=itens.filter(i=>parseFloat(i.qtdMinima||0)>0&&parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0));
+  if(statusF==='ok') itens=itens.filter(i=>parseFloat(i.qtdAtual||0)>parseFloat(i.qtdMinima||0));
+  itens.sort((a,b)=>{
+    const qa=parseFloat(a.qtdAtual||0),qb=parseFloat(b.qtdAtual||0);
+    const ma=parseFloat(a.qtdMinima||0),mb=parseFloat(b.qtdMinima||0);
+    const alertA=qa===0?2:(ma>0&&qa<=ma?1:0);
+    const alertB=qb===0?2:(mb>0&&qb<=mb?1:0);
+    if(alertA!==alertB) return alertB-alertA;
+    return (a.setor||'').localeCompare(b.setor||'')|| (a.descricao||'').localeCompare(b.descricao||'');
+  });
+  const cntEl=document.getElementById('dash-count');
+  if(cntEl) cntEl.textContent=itens.length+' ite'+(itens.length===1?'m':'ns');
+
+  // ---- GRÁFICOS ----
+  // Chart 1: Estoque atual por item (bar horizontal)
+  const cEst=document.getElementById('chartEstoque');
+  if(_chartEstoque) _chartEstoque.destroy();
+  const topItens=itens.slice(0,12);
+  const estColors=topItens.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return q===0?'#dc2626':m>0&&q<=m?'#d97706':'#16a34a';});
+  _chartEstoque=new Chart(cEst,{type:'bar',
+    data:{labels:topItens.map(i=>i.descricao.length>18?i.descricao.slice(0,18)+'…':i.descricao),
+      datasets:[{label:'Estoque',data:topItens.map(i=>parseFloat(i.qtdAtual||0)),backgroundColor:estColors,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const it=topItens[ctx.dataIndex];return ' '+ctx.raw+' '+(it.unidade||'UN');}}}},scales:{x:{beginAtZero:true,ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}
+  });
+
+  // Chart 2: Entradas × Saídas do mês por item
+  const cES=document.getElementById('chartEntSai');
+  if(_chartEntSai) _chartEntSai.destroy();
+  const itensComMov=itens.filter(i=>entMes.some(m=>m.itemId===i.id)||saiMes.some(m=>m.itemId===i.id));
+  const esLabels=itensComMov.map(i=>i.descricao.length>14?i.descricao.slice(0,14)+'…':i.descricao);
+  const esEnt=itensComMov.map(i=>entMes.filter(m=>m.itemId===i.id).reduce((a,m)=>a+parseFloat(m.quantidade||0),0));
+  const esSai=itensComMov.map(i=>saiMes.filter(m=>m.itemId===i.id).reduce((a,m)=>a+parseFloat(m.quantidade||0),0));
+  _chartEntSai=new Chart(cES,{type:'bar',
+    data:{labels:esLabels.length?esLabels:['(sem mov. no mês)'],
+      datasets:[
+        {label:'Entradas',data:esEnt.length?esEnt:[0],backgroundColor:'#16a34a88',borderColor:'#16a34a',borderWidth:2,borderRadius:3},
+        {label:'Saídas',data:esSai.length?esSai:[0],backgroundColor:'#dc262688',borderColor:'#dc2626',borderWidth:2,borderRadius:3}
+      ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:9}}},y:{beginAtZero:true,ticks:{font:{size:10}}}}}
+  });
+
+  // Chart 3: Distribuição por Setor/Destino (doughnut)
+  const cSt=document.getElementById('chartSetor');
+  if(_chartSetor) _chartSetor.destroy();
+  const setores=['caldeiraria','jateamento','pintura','geral'];
+  const setLbls=['Caldeiraria','Jateamento','Pintura','Geral'];
+  const setQtds=setores.map(s=>allItens.filter(i=>i.setor===s).length);
+  const setColors=['#d97706','#1d4ed8','#16a34a','#6b7280'];
+  _chartSetor=new Chart(cSt,{type:'doughnut',
+    data:{labels:setLbls,datasets:[{data:setQtds,backgroundColor:setColors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10},padding:8}},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw+' ite'+(ctx.raw===1?'m':'ns')}}}}
+  });
+
+  // ---- TABELA ----
+  const wrap=document.getElementById('dash-estoque-wrap');
+  if(!itens.length){
+    wrap.innerHTML=`<div class="empty" style="padding:50px">Nenhum item cadastrado.<br><br><button class="btn btn-pri" onclick="goTab('entrada')">⬇️ Lançar primeira entrada</button></div>`;
+    return;
+  }
+  function tabelaItens(lista){
+    return`<div class="tbl-wrap"><table>
+      <thead><tr>
+        <th>Código</th><th>Descrição</th><th>Setor / Destino</th><th>Un.</th>
+        <th style="text-align:center">ESTOQUE ATUAL</th>
+        <th style="text-align:center">Entradas (mês)</th>
+        <th style="text-align:center">Saídas (mês)</th>
+        <th>Status</th><th></th>
+      </tr></thead>
+      <tbody>${lista.map(i=>{
+        const q=parseFloat(i.qtdAtual||0),mn=parseFloat(i.qtdMinima||0);
+        const vazio=q===0,baixo=mn>0&&q<=mn&&q>0;
+        const entItem=entMes.filter(m=>m.itemId===i.id).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+        const saiItem=saiMes.filter(m=>m.itemId===i.id).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+        const stBdg=vazio?'<span class="bdg bdg-alr">SEM ESTOQUE</span>':baixo?'<span class="bdg bdg-low">BAIXO</span>':'<span class="bdg bdg-ok">OK</span>';
+        const rowBg=vazio?'background:#fff8f8':baixo?'background:#fffef0':'';
+        return`<tr style="${rowBg}">
+          <td><code style="font-size:11px;color:var(--muted)">${i.codigo||'-'}</code></td>
+          <td style="font-weight:600">${i.descricao}</td>
+          <td>${setorBadge(i.setor)}</td>
+          <td style="color:var(--muted)">${i.unidade||'-'}</td>
+          <td style="text-align:center;padding:6px 8px">
+            <span style="font-size:22px;font-weight:800;line-height:1" class="${vazio?'qtd-danger':baixo?'qtd-low':'qtd-ok'}">${fmtQtd(q)}</span>
+            ${mn>0?`<div style="font-size:10px;color:var(--muted);margin-top:2px">mín: ${fmtQtd(mn)}</div>`:''}
+          </td>
+          <td style="text-align:center;font-weight:700;color:var(--success)">${entItem>0?'+'+fmtQtd(entItem)+' '+i.unidade:'-'}</td>
+          <td style="text-align:center;font-weight:700;color:var(--danger)">${saiItem>0?'-'+fmtQtd(saiItem)+' '+i.unidade:'-'}</td>
+          <td>${stBdg}</td>
+          <td><button class="btn btn-info btn-xs" onclick="verMovsItem('${i.id}')" style="white-space:nowrap">📋 Ver Mov.</button></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+  if(grupo==='setor'){
+    // Agrupar por setor / destino
+    const ordem=['caldeiraria','jateamento','pintura','geral'];
+    const nomes={caldeiraria:'🔧 Caldeiraria',jateamento:'💨 Jateamento',pintura:'🎨 Pintura',geral:'⚙️ Geral'};
+    const cores={caldeiraria:'var(--cal)',jateamento:'var(--jat)',pintura:'var(--pin)',geral:'#6b7280'};
+    let html='';
+    ordem.forEach(s=>{
+      const grupo=itens.filter(i=>i.setor===s);
+      if(!grupo.length) return;
+      const totalEnt=entMes.filter(m=>grupo.some(i=>i.id===m.itemId)).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+      const totalSai=saiMes.filter(m=>grupo.some(i=>i.id===m.itemId)).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+      html+=`<div style="margin-bottom:16px">
+        <div style="padding:10px 14px;background:#f8f9fa;border-left:4px solid ${cores[s]};border-radius:6px 6px 0 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:800;color:${cores[s]}">${nomes[s]}</span>
+          <span style="font-size:12px;color:var(--muted)">${grupo.length} ite${grupo.length===1?'m':'ns'}</span>
+          ${totalEnt>0?`<span style="font-size:12px;font-weight:700;color:var(--success)">+${fmtQtd(totalEnt)} entrada(s) no mês</span>`:''}
+          ${totalSai>0?`<span style="font-size:12px;font-weight:700;color:var(--danger)">-${fmtQtd(totalSai)} saída(s) no mês</span>`:''}
+        </div>
+        ${tabelaItens(grupo)}
+      </div>`;
+    });
+    wrap.innerHTML=html;
+  } else {
+    wrap.innerHTML=tabelaItens(itens);
+  }
+}
+function verMovsItem(id){
+  const item=getItens().find(i=>i.id===id);if(!item)return;
+  const movs=getMovs().filter(m=>m.itemId===id).sort((a,b)=>b.data.localeCompare(a.data));
+  const entradas=movs.filter(m=>m.tipo==='entrada'||m.tipo==='estorno');
+  const saidas=movs.filter(m=>m.tipo==='saida');
+  const ajustes=movs.filter(m=>m.tipo==='ajuste');
+  const totalEnt=entradas.reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+  const totalSai=saidas.reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+  const q=parseFloat(item.qtdAtual||0);
+  const qCls=q===0?'qtd-danger':parseFloat(item.qtdMinima||0)>0&&q<=parseFloat(item.qtdMinima||0)?'qtd-low':'qtd-ok';
+  const html=`
+    <div class="modal-title">${item.descricao} <small style="color:var(--muted);font-size:13px">${item.codigo||''}</small></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px">
+      <div class="card" style="padding:12px"><div class="card-lbl">Estoque Atual</div><div class="card-val ${qCls}" style="font-size:22px">${fmtQtd(q)} <small style="font-size:13px">${item.unidade||''}</small></div></div>
+      <div class="card success" style="padding:12px"><div class="card-lbl">Total Entradas</div><div class="card-val" style="font-size:20px;color:var(--success)">${fmtQtd(totalEnt)}</div><div class="card-sub">${entradas.length} lançamentos</div></div>
+      <div class="card warn" style="padding:12px"><div class="card-lbl">Total Saídas</div><div class="card-val" style="font-size:20px;color:var(--warning)">${fmtQtd(totalSai)}</div><div class="card-sub">${saidas.length} lançamentos</div></div>
+      <div class="card" style="padding:12px"><div class="card-lbl">Setor</div><div style="margin-top:6px">${setorBadge(item.setor)}</div><div class="card-sub">${item.fornecedorPrincipal||'—'}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--success);margin-bottom:8px;letter-spacing:.5px">⬇️ Entradas (${entradas.length})</div>
+        <div class="tbl-wrap" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">
+        <table>
+          <thead><tr><th>Data</th><th>Qtd</th><th>Fornecedor</th><th>NF</th><th>Obs</th></tr></thead>
+          <tbody>${entradas.length?entradas.map(m=>`<tr>
+            <td>${fmtDate(m.data)}</td>
+            <td style="font-weight:700;color:var(--success)">+${fmtQtd(m.quantidade)} ${item.unidade||''}</td>
+            <td>${m.fornecedor||'-'}</td><td>${m.nf||'-'}</td><td style="font-size:11px">${m.obs||'-'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhuma entrada</td></tr>'}
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--danger);margin-bottom:8px;letter-spacing:.5px">⬆️ Saídas (${saidas.length})</div>
+        <div class="tbl-wrap" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">
+        <table>
+          <thead><tr><th>Data</th><th>Qtd</th><th>Setor</th><th>Funcionário</th><th>Obs</th></tr></thead>
+          <tbody>${saidas.length?saidas.map(m=>`<tr>
+            <td>${fmtDate(m.data)}</td>
+            <td style="font-weight:700;color:var(--danger)">-${fmtQtd(m.quantidade)} ${item.unidade||''}</td>
+            <td>${setorBadge(m.setor)}</td><td>${m.funcionario||'-'}</td><td style="font-size:11px">${m.obs||'-'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhuma saída</td></tr>'}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+    ${ajustes.length?`<div style="margin-top:14px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#3730a3;margin-bottom:8px;letter-spacing:.5px">🔧 Ajustes (${ajustes.length})</div>
+    <div class="tbl-wrap" style="border:1px solid var(--border);border-radius:6px"><table>
+      <thead><tr><th>Data</th><th>Saldo Anterior</th><th>Saldo Novo</th><th>Diferença</th><th>Motivo</th></tr></thead>
+      <tbody>${ajustes.map(m=>`<tr><td>${fmtDate(m.data)}</td><td>${fmtQtd(m.saldoAnterior||0)}</td><td>${fmtQtd(m.saldoNovo||0)}</td>
+        <td style="font-weight:700;color:${parseFloat(m.diff||0)>=0?'var(--success)':'var(--danger)'}">${parseFloat(m.diff||0)>=0?'+':''}${fmtQtd(m.diff||0)}</td>
+        <td style="font-size:11px">${m.obs||'-'}</td></tr>`).join('')}
+      </tbody></table></div></div>`:''}
+    <div class="form-footer" style="margin-top:16px">
+      <button class="btn btn-pri btn-sm" onclick="pdfItemMovs('${id}')">📄 Visualizar / Baixar PDF</button>
+      <button class="btn btn-suc btn-sm" onclick="closeItemHistModal();goTab('entrada')">⬇️ Registrar Entrada</button>
+      <button class="btn btn-war btn-sm" onclick="closeItemHistModal();goTab('saida')">⬆️ Registrar Saída</button>
+      <button class="btn btn-purple btn-sm" onclick="closeItemHistModal();ajusteRapido('${id}')">🔧 Corrigir Saldo</button>
+      <button class="btn btn-sec btn-sm" onclick="closeItemHistModal()">Fechar</button>
+    </div>`;
+  document.getElementById('modal-item-hist-content').innerHTML=html;
+  document.getElementById('modal-item-hist-overlay').classList.add('open');
+}
+function closeItemHistModal(){document.getElementById('modal-item-hist-overlay').classList.remove('open')}
+function closeItemHistEvt(e){if(e.target===document.getElementById('modal-item-hist-overlay'))closeItemHistModal()}
+
+// ======= ITENS =======
+function renderItens(){
+  let itens=getItens();
+  const srch=(document.getElementById('srch-itens').value||'').toLowerCase();
+  const sf=document.getElementById('flt-setor').value,stf=document.getElementById('flt-status').value;
+  if(srch) itens=itens.filter(i=>(i.codigo||'').toLowerCase().includes(srch)||(i.descricao||'').toLowerCase().includes(srch)||(i.fornecedorPrincipal||'').toLowerCase().includes(srch));
+  if(sf) itens=itens.filter(i=>i.setor===sf);
+  if(stf==='alerta') itens=itens.filter(i=>parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0));
+  if(stf==='ok') itens=itens.filter(i=>parseFloat(i.qtdAtual||0)>parseFloat(i.qtdMinima||0));
+  const tbody=document.getElementById('tbl-itens');
+  tbody.innerHTML=itens.length?itens.map(i=>{
+    const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);
+    const vazio=q===0,baixo=q<=m&&q>0;
+    const stBdg=vazio?`<span class="bdg bdg-alr">SEM ESTOQUE</span>`:baixo?`<span class="bdg bdg-low">BAIXO</span>`:`<span class="bdg bdg-ok">OK</span>`;
+    return`<tr><td><b>${i.codigo||'-'}</b></td><td>${i.descricao}</td><td>${setorBadge(i.setor)}</td><td>${i.unidade||'-'}</td>
+      <td class="qtd-display ${vazio?'qtd-danger':baixo?'qtd-low':'qtd-ok'}">${fmtQtd(q)}</td>
+      <td>${fmtQtd(m)}</td><td>${stBdg}</td><td>${i.fornecedorPrincipal||'-'}</td>
+      <td class="row-actions">
+        <button class="btn btn-sec btn-xs" onclick="editItem('${i.id}')">✏️</button>
+        <button class="btn btn-purple btn-xs" onclick="ajusteRapido('${i.id}')" title="Corrigir saldo">🔧</button>
+        <button class="btn btn-dan btn-xs" onclick="confirmDeleteItem('${i.id}')">🗑</button>
+      </td></tr>`;
+  }).join(''):`<tr><td colspan="9" class="empty">Nenhum item encontrado</td></tr>`;
+}
+
+function openItemModal(){
+  document.getElementById('modal-item-overlay').classList.add('open');
+  document.getElementById('item-edit-id').value='';
+  document.getElementById('modal-item-title').textContent='Novo Item';
+  ['item-codigo','item-desc','item-un','item-obs','item-forn'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('item-qtd').value='0';
+  document.getElementById('item-min').value='0';
+  document.getElementById('item-setor').value='';
+  updateFornDatalist('list-forn-item');
+}
+function editItem(id){
+  const item=getItens().find(i=>i.id===id);if(!item)return;
+  openItemModal();
+  document.getElementById('item-edit-id').value=id;
+  document.getElementById('modal-item-title').textContent='Editar Item';
+  document.getElementById('item-codigo').value=item.codigo||'';
+  document.getElementById('item-desc').value=item.descricao||'';
+  document.getElementById('item-setor').value=item.setor||'';
+  document.getElementById('item-un').value=item.unidade||'';
+  document.getElementById('item-qtd').value=item.qtdAtual||0;
+  document.getElementById('item-min').value=item.qtdMinima||0;
+  document.getElementById('item-forn').value=item.fornecedorPrincipal||'';
+  document.getElementById('item-obs').value=item.observacao||'';
+}
+function ajusteRapido(id){goTab('ajuste');setTimeout(()=>{const item=getItens().find(i=>i.id===id);if(!item)return;document.getElementById('ajt-item-srch').value=`[${item.codigo}] ${item.descricao}`;document.getElementById('ajt-item-id').value=id;showAjusteInfo(item);},100);}
+function salvarItem(){
+  const id=document.getElementById('item-edit-id').value;
+  const codigo=document.getElementById('item-codigo').value.trim();
+  const desc=document.getElementById('item-desc').value.trim();
+  const setor=document.getElementById('item-setor').value;
+  const un=document.getElementById('item-un').value.trim();
+  const qtd=parseFloat(document.getElementById('item-qtd').value)||0;
+  const min=parseFloat(document.getElementById('item-min').value)||0;
+  const forn=document.getElementById('item-forn').value.trim();
+  const obs=document.getElementById('item-obs').value.trim();
+  if(!codigo||!desc||!setor||!un){alert2('Preencha: Código, Descrição, Setor e Unidade');return}
+  let itens=getItens();
+  if(id){itens=itens.map(i=>i.id===id?{...i,codigo,descricao:desc,setor,unidade:un,qtdAtual:qtd,qtdMinima:min,fornecedorPrincipal:forn,observacao:obs}:i);ok2('Item atualizado!');}
+  else{if(itens.find(i=>i.codigo.toLowerCase()===codigo.toLowerCase())){alert2('Já existe um item com esse código!');return}itens.push({id:uid(),codigo,descricao:desc,setor,unidade:un,qtdAtual:qtd,qtdMinima:min,fornecedorPrincipal:forn,observacao:obs,dataCadastro:today()});ok2('Item cadastrado!');}
+  setItens(itens);closeItemModal();renderItens();
+}
+function closeItemModal(){document.getElementById('modal-item-overlay').classList.remove('open')}
+function closeModalItem(e){if(e.target===document.getElementById('modal-item-overlay'))closeItemModal()}
+function confirmDeleteItem(id){
+  const item=getItens().find(i=>i.id===id);if(!item)return;
+  showConfirm('Excluir Item',`Excluir <b>${item.descricao}</b>?<br><small>Esta ação não pode ser desfeita.</small>`,()=>{setItens(getItens().filter(i=>i.id!==id));renderItens();ok2('Item excluído!')});
+}
+function exportItensCSV(){
+  const rows=[['Código','Descrição','Setor','Unidade','Estoque','Mínimo','Fornecedor','Observação']];
+  getItens().forEach(i=>rows.push([i.codigo,i.descricao,i.setor,i.unidade,i.qtdAtual,i.qtdMinima,i.fornecedorPrincipal||'',i.observacao||'']));
+  downloadCSV(rows,'itens_estoque.csv');
+}
+
+// ======= ENTRADA =======
+function setupEntradaForm(){
+  if(!document.getElementById('ent-data').value) document.getElementById('ent-data').value=today();
+  updateFornDatalist('list-forn');updateItensDatalist('list-itens-ent');updateFuncsDatalist();
+  renderEntradasRec();
+}
+// Busca flexível: aceita [COD] Desc, só Desc, só código, ou parcial único
+function findItemBySearch(val){
+  if(!val||!val.trim()) return null;
+  const v=val.trim().toLowerCase();
+  const itens=getItens();
+  // 1. Match exato [COD] DESC
+  let f=itens.find(i=>`[${i.codigo}] ${i.descricao}`.toLowerCase()===v);
+  if(f) return f;
+  // 2. Match exato descrição
+  f=itens.find(i=>i.descricao.toLowerCase()===v);
+  if(f) return f;
+  // 3. Match exato código
+  f=itens.find(i=>(i.codigo||'').toLowerCase()===v);
+  if(f) return f;
+  // 4. Match parcial único
+  const parciais=itens.filter(i=>i.descricao.toLowerCase().includes(v)||(i.codigo||'').toLowerCase().includes(v));
+  if(parciais.length===1) return parciais[0];
+  return null;
+}
+// onEntItemSearch defined in banco section below
+function gerarCodAuto(){
+  const itens=getItens();
+  const nums=itens.map(i=>(i.codigo||'')).filter(c=>c.startsWith('IT-')).map(c=>parseInt(c.replace('IT-',''))||0);
+  return 'IT-'+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0');
+}
+function salvarEntrada(){
+  const data=document.getElementById('ent-data').value;
+  const nf=document.getElementById('ent-nf').value.trim();
+  const forn=document.getElementById('ent-forn').value.trim();
+  const itemSrch=document.getElementById('ent-item-srch').value.trim();
+  let itemId=document.getElementById('ent-item-id').value;
+  const qtd=parseFloat(document.getElementById('ent-qtd').value)||0;
+  const valor=parseFloat(document.getElementById('ent-valor').value)||0;
+  const obs=document.getElementById('ent-obs').value.trim();
+  if(!itemId&&itemSrch){const f=findItemBySearch(itemSrch);if(f){itemId=f.id;document.getElementById('ent-item-id').value=f.id;}}
+  const unidade=(document.getElementById('ent-un').value||'UN').trim();
+  const setorForm=document.getElementById('ent-setor')?.value||'geral';
+  if(!data){alert2('Informe a DATA da entrada');return}
+  if(!forn){alert2('Informe o FORNECEDOR');return}
+  if(!itemSrch){alert2('Digite o nome do ITEM');return}
+  if(!qtd){alert2('Informe a QUANTIDADE');return}
+  if(!unidade){alert2('Informe a UNIDADE (UN, m³, KG...)');return}
+  if(!setorForm){alert2('Selecione o SETOR / DESTINO');return}
+  // Auto-criar fornecedor se não existir
+  let fornList=getForn();
+  const fornExiste=fornList.find(f=>f.nome.toLowerCase()===forn.toLowerCase());
+  if(!fornExiste){
+    fornList.push({id:uid(),nome:forn,contato:'',telefone:'',email:'',obs:'Criado automaticamente via Entrada'});
+    setForn(fornList);
+    updateFornDatalist('list-forn');updateFornDatalist('list-forn-item');
+    showToast('Fornecedor "'+forn+'" registrado automaticamente. Edite em FORNECEDORES para completar.','info');
+  }
+  let itens=getItens();
+  let item=itens.find(i=>i.id===itemId);
+  if(!item){
+    // Auto-criar item com a unidade informada
+    const novoCod=gerarCodAuto();
+    item={id:uid(),codigo:novoCod,descricao:itemSrch,setor:setorForm,unidade:unidade,qtdAtual:0,qtdMinima:0,fornecedorPrincipal:forn,observacao:'Criado via Entrada',dataCadastro:today()};
+    itens.push(item);setItens(itens);
+    showToast('Item "'+itemSrch+'" criado no cadastro ('+novoCod+') com unidade '+unidade+'. Edite em ITENS para ajustar setor e estoque mínimo.','info');
+    updateItensDatalist('list-itens-ent');updateItensDatalist('list-itens-sai');updateItensDatalist('list-itens-ajt');
+  } else {
+    // Atualiza unidade e setor no cadastro se foram alterados no lançamento
+    let changed=[];
+    if(item.unidade!==unidade) changed.push('unidade para '+unidade);
+    if(setorForm&&item.setor!==setorForm) changed.push('setor para '+setorForm);
+    if(changed.length){
+      itens=itens.map(i=>i.id===item.id?{...i,unidade:unidade,setor:setorForm}:i);
+      item={...item,unidade:unidade,setor:setorForm};
+      showToast('Item atualizado: '+changed.join(', '),'info');
+    }
+  }
+  itens=itens.map(i=>i.id===item.id?{...i,qtdAtual:(parseFloat(i.qtdAtual||0)+qtd)}:i);setItens(itens);
+  const movs=getMovs();movs.push({id:uid(),tipo:'entrada',data,nf,fornecedor:forn,itemId:item.id,itemDesc:item.descricao,itemCod:item.codigo,itemUn:unidade,quantidade:qtd,valorUnit:valor,setor:setorForm,obs});setMovs(movs);
+  ok2('Entrada registrada: +'+fmtQtd(qtd)+' '+unidade+' de '+item.descricao);limparEntrada();renderEntradasRec();
+}
+function limparEntrada(){
+  ['ent-nf','ent-forn','ent-item-srch','ent-item-id','ent-qtd','ent-un','ent-valor','ent-obs'].forEach(f=>{const el=document.getElementById(f);if(el)el.value=''});
+  const setEl=document.getElementById('ent-setor');if(setEl)setEl.value='';
+  const srchEl=document.getElementById('ent-item-srch');if(srchEl)srchEl.style.borderColor='';
+}
+function renderEntradasRec(){
+  const movs=getMovs().filter(m=>m.tipo==='entrada').sort((a,b)=>b.data.localeCompare(a.data)).slice(0,15);
+  document.getElementById('tbl-entradas-rec').innerHTML=movs.length?movs.map(m=>`<tr><td>${fmtDate(m.data)}</td><td>${m.nf||'-'}</td><td>${m.itemDesc||'-'}</td><td>${fmtQtd(m.quantidade)} ${m.itemUn||''}</td><td>R$ ${fmtNum(m.valorUnit)}</td><td>R$ ${fmtNum(parseFloat(m.quantidade||0)*parseFloat(m.valorUnit||0))}</td><td>${m.fornecedor||'-'}</td><td>${m.obs||'-'}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">Nenhuma entrada registrada</td></tr>`;
+}
+
+// ======= SAÍDA =======
+function setupSaidaForm(){
+  if(!document.getElementById('sai-data').value) document.getElementById('sai-data').value=today();
+  updateItensDatalist('list-itens-sai');updateFuncsDatalist();renderSaidasRec();
+}
+function onSaiItemSearch(){
+  const val=document.getElementById('sai-item-srch').value;
+  const found=findItemBySearch(val);
+  document.getElementById('sai-item-id').value=found?found.id:'';
+  if(found) document.getElementById('sai-item-srch').style.borderColor='var(--success)';
+  else document.getElementById('sai-item-srch').style.borderColor=val?'var(--danger)':'';
+}
+function salvarSaida(){
+  const data=document.getElementById('sai-data').value;
+  const setor=document.getElementById('sai-setor').value;
+  const func=document.getElementById('sai-func').value.trim();
+  const itemSrch=document.getElementById('sai-item-srch').value.trim();
+  let itemId=document.getElementById('sai-item-id').value;
+  const qtd=parseFloat(document.getElementById('sai-qtd').value)||0;
+  const obs=document.getElementById('sai-obs').value.trim();
+  if(!itemId&&itemSrch){const f=findItemBySearch(itemSrch);if(f){itemId=f.id;document.getElementById('sai-item-id').value=f.id;}}
+  if(!data){alert2('Informe a DATA da saída');return}
+  if(!setor){alert2('Selecione o SETOR');return}
+  if(!func){alert2('Informe o nome do FUNCIONÁRIO');return}
+  if(!itemSrch){alert2('Selecione ou digite o ITEM');return}
+  if(!itemId){alert2('Item "'+itemSrch+'" não encontrado no cadastro.\n\nCadastre primeiro na aba ITENS ou verifique o nome digitado.');return}
+  if(!qtd){alert2('Informe a QUANTIDADE');return}
+  let itens=getItens();const item=itens.find(i=>i.id===itemId);
+  if(!item){alert2('Item não encontrado no cadastro. Cadastre-o na aba ITENS.');return}
+  const qtdAtual=parseFloat(item.qtdAtual||0);
+  if(qtd>qtdAtual){alert2(`Saldo insuficiente! Disponível: ${fmtQtd(qtdAtual)} ${item.unidade}`);return}
+  itens=itens.map(i=>i.id===itemId?{...i,qtdAtual:(qtdAtual-qtd)}:i);setItens(itens);
+  const movs=getMovs();movs.push({id:uid(),tipo:'saida',data,setor,funcionario:func,itemId,itemDesc:item.descricao,itemCod:item.codigo,itemUn:item.unidade,quantidade:qtd,obs});setMovs(movs);
+  ok2(`Saída: -${fmtQtd(qtd)} ${item.unidade} de ${item.descricao}`);limparSaida();renderSaidasRec();
+}
+function limparSaida(){['sai-setor','sai-func','sai-item-srch','sai-item-id','sai-qtd','sai-obs'].forEach(f=>{const el=document.getElementById(f);if(el.tagName==='SELECT')el.value='';else el.value=''})}
+function renderSaidasRec(){
+  const movs=getMovs().filter(m=>m.tipo==='saida').sort((a,b)=>b.data.localeCompare(a.data)).slice(0,15);
+  document.getElementById('tbl-saidas-rec').innerHTML=movs.length?movs.map(m=>`<tr><td>${fmtDate(m.data)}</td><td>${m.itemDesc||'-'}</td><td>${fmtQtd(m.quantidade)} ${m.itemUn||''}</td><td>${setorBadge(m.setor)}</td><td>${m.funcionario||'-'}</td><td>${m.obs||'-'}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Nenhuma saída registrada</td></tr>`;
+}
+
+// ======= AJUSTE =======
+function setupAjuste(){
+  if(!document.getElementById('ajt-data').value) document.getElementById('ajt-data').value=today();
+  updateItensDatalist('list-itens-ajt');renderEstorno();
+}
+function onAjtItemSearch(){
+  const val=document.getElementById('ajt-item-srch').value;
+  const found=findItemBySearch(val);
+  document.getElementById('ajt-item-id').value=found?found.id:'';
+  if(found) showAjusteInfo(found); else document.getElementById('ajt-info').style.display='none';
+}
+function showAjusteInfo(item){
+  const el=document.getElementById('ajt-info');
+  el.style.display='block';
+  el.innerHTML=`Saldo atual de <b>${item.descricao}</b>: <b id="ajt-saldo-atual">${fmtQtd(item.qtdAtual||0)} ${item.unidade}</b>`;
+  calcDiff();
+}
+function calcDiff(){
+  const id=document.getElementById('ajt-item-id').value;
+  const item=getItens().find(i=>i.id===id);if(!item)return;
+  const novoSaldo=parseFloat(document.getElementById('ajt-novo-saldo').value)||0;
+  const atual=parseFloat(item.qtdAtual||0);
+  const diff=novoSaldo-atual;
+  const el=document.getElementById('ajt-diff');
+  el.value=(diff>=0?'+':'')+fmtQtd(diff)+' '+item.unidade;
+  el.style.color=diff>0?'var(--success)':diff<0?'var(--danger)':'var(--muted)';
+}
+function salvarAjuste(){
+  const id0=document.getElementById('ajt-item-id').value;
+  const srchVal=document.getElementById('ajt-item-srch').value.trim();
+  const id=id0||(()=>{const f=findItemBySearch(srchVal);return f?f.id:''})();
+  const novoSaldo=parseFloat(document.getElementById('ajt-novo-saldo').value);
+  const motivo=document.getElementById('ajt-motivo').value.trim();
+  const data=document.getElementById('ajt-data').value;
+  if(!srchVal){alert2('Selecione o ITEM para ajuste');return}
+  if(!id){alert2('Item "'+srchVal+'" não encontrado no cadastro. Cadastre-o na aba ITENS.');return}
+  if(isNaN(novoSaldo)){alert2('Informe o Novo Saldo Correto');return}
+  if(!motivo){alert2('Informe o MOTIVO da correção');return}
+  if(!data){alert2('Informe a DATA');return}
+  let itens=getItens();const item=itens.find(i=>i.id===id);if(!item)return;
+  const atual=parseFloat(item.qtdAtual||0);
+  const diff=novoSaldo-atual;
+  itens=itens.map(i=>i.id===id?{...i,qtdAtual:novoSaldo}:i);setItens(itens);
+  const movs=getMovs();
+  movs.push({id:uid(),tipo:'ajuste',data,itemId:id,itemDesc:item.descricao,itemCod:item.codigo,itemUn:item.unidade,quantidade:Math.abs(diff),saldoAnterior:atual,saldoNovo:novoSaldo,diff,setor:item.setor,obs:motivo});setMovs(movs);
+  ok2(`Saldo corrigido: ${fmtQtd(atual)} → ${fmtQtd(novoSaldo)} ${item.unidade}`);limparAjuste();renderEstorno();
+}
+function limparAjuste(){
+  ['ajt-item-srch','ajt-item-id','ajt-novo-saldo','ajt-motivo'].forEach(f=>document.getElementById(f).value='');
+  document.getElementById('ajt-diff').value='';
+  document.getElementById('ajt-info').style.display='none';
+}
+function renderEstorno(){
+  let movs=getMovs().filter(m=>m.tipo==='entrada'||m.tipo==='saida').sort((a,b)=>b.data.localeCompare(a.data)).slice(0,60);
+  const srch=(document.getElementById('srch-estorno').value||'').toLowerCase();
+  if(srch) movs=movs.filter(m=>(m.itemDesc||'').toLowerCase().includes(srch)||m.data.includes(srch));
+  document.getElementById('tbl-estorno').innerHTML=movs.length?movs.map(m=>`
+    <tr><td>${fmtDate(m.data)}</td><td>${tipoBadge(m.tipo)}</td><td style="font-size:12px">${m.itemDesc||'-'}</td>
+    <td>${fmtQtd(m.quantidade)} ${m.itemUn||''}</td>
+    <td><button class="btn btn-sm" style="background:#e0e7ff;color:#3730a3;font-size:11px" onclick="estornar('${m.id}')">↩ Estornar</button></td></tr>
+  `).join(''):`<tr><td colspan="5" class="empty">Nenhuma movimentação</td></tr>`;
+}
+function estornar(movId){
+  const mov=getMovs().find(m=>m.id===movId);if(!mov)return;
+  showConfirm('Estornar Movimentação',
+    `Estornar ${mov.tipo==='entrada'?'ENTRADA':'SAÍDA'} de <b>${fmtQtd(mov.quantidade)} ${mov.itemUn||''}</b> de <b>${mov.itemDesc}</b> em ${fmtDate(mov.data)}?<br><br><small>Um lançamento inverso será criado e o saldo será ajustado.</small>`,
+    ()=>{
+      let itens=getItens();
+      const item=itens.find(i=>i.id===mov.itemId);
+      if(!item){alert2('Item não encontrado!');return}
+      const qtdAtual=parseFloat(item.qtdAtual||0);
+      const qtdMov=parseFloat(mov.quantidade||0);
+      let novoSaldo;
+      if(mov.tipo==='entrada') novoSaldo=qtdAtual-qtdMov;
+      else novoSaldo=qtdAtual+qtdMov;
+      if(novoSaldo<0){alert2(`Não é possível estornar: saldo ficaria negativo (${fmtQtd(novoSaldo)})`);return}
+      itens=itens.map(i=>i.id===mov.itemId?{...i,qtdAtual:novoSaldo}:i);setItens(itens);
+      const movs=getMovs();
+      movs.push({id:uid(),tipo:'estorno',data:today(),itemId:mov.itemId,itemDesc:mov.itemDesc,itemCod:mov.itemCod,itemUn:mov.itemUn,quantidade:qtdMov,setor:mov.setor,obs:`Estorno de ${mov.tipo} de ${fmtDate(mov.data)}`,refMovId:movId});
+      setMovs(movs);
+      ok2(`Estorno aplicado. Novo saldo: ${fmtQtd(novoSaldo)} ${item.unidade}`);renderEstorno();
+    }
+  );
+}
+
+// ======= HISTÓRICO =======
+function renderHist(){
+  let movs=getMovs().sort((a,b)=>b.data.localeCompare(a.data));
+  const srch=(document.getElementById('srch-hist').value||'').toLowerCase();
+  const tipo=document.getElementById('flt-hist-tipo').value;
+  const setor=document.getElementById('flt-hist-setor').value;
+  const mes=document.getElementById('flt-hist-mes').value;
+  if(srch) movs=movs.filter(m=>(m.itemDesc||'').toLowerCase().includes(srch)||(m.itemCod||'').toLowerCase().includes(srch));
+  if(tipo) movs=movs.filter(m=>m.tipo===tipo);
+  if(setor) movs=movs.filter(m=>m.setor===setor);
+  if(mes) movs=movs.filter(m=>m.data&&m.data.startsWith(mes));
+  document.getElementById('tbl-hist').innerHTML=movs.length?movs.map(m=>{
+    const total=m.tipo==='entrada'?`R$ ${fmtNum(parseFloat(m.quantidade||0)*parseFloat(m.valorUnit||0))}`:`-`;
+    const nfFunc=m.tipo==='entrada'?(m.nf||'-'):(m.funcionario||'-');
+    const obsMotivo=m.tipo==='ajuste'?`<span style="color:#3730a3;font-size:11px">${m.obs||''}</span>`:(m.obs||'-');
+    return`<tr><td>${fmtDate(m.data)}</td><td>${tipoBadge(m.tipo)}</td>
+      <td><small style="color:var(--muted)">${m.itemCod||''}</small> ${m.itemDesc||'-'}</td>
+      <td>${setorBadge(m.setor)}</td>
+      <td>${fmtQtd(m.quantidade)} ${m.itemUn||''}</td>
+      <td>${m.tipo==='entrada'?'R$ '+fmtNum(m.valorUnit||0):'-'}</td>
+      <td>${total}</td><td>${nfFunc}</td>
+      <td>${m.tipo==='entrada'?(m.fornecedor||'-'):'-'}</td>
+      <td>${obsMotivo}</td>
+      <td><button class="btn btn-dan btn-xs" onclick="confirmDeleteMov('${m.id}')">🗑</button></td></tr>`;
+  }).join(''):`<tr><td colspan="11" class="empty">Nenhuma movimentação encontrada</td></tr>`;
+}
+function confirmDeleteMov(id){
+  const mov=getMovs().find(m=>m.id===id);if(!mov)return;
+  showConfirm('Excluir Registro',`Excluir esta movimentação do histórico?<br><small style="color:var(--danger)">O saldo do item NÃO será revertido. Use Estornar para reverter o saldo.</small>`,()=>{setMovs(getMovs().filter(m=>m.id!==id));renderHist();ok2('Registro excluído.')});
+}
+function exportHistCSV(){
+  const rows=[['Data','Tipo','Código','Item','Setor','Quantidade','Un.','Val.Unit.','Total','NF','Funcionário','Fornecedor','Obs/Motivo']];
+  getMovs().sort((a,b)=>b.data.localeCompare(a.data)).forEach(m=>rows.push([fmtDate(m.data),m.tipo,m.itemCod||'',m.itemDesc||'',m.setor||'',m.quantidade,m.itemUn||'',m.valorUnit||'',m.tipo==='entrada'?parseFloat(m.quantidade||0)*parseFloat(m.valorUnit||0):'',m.nf||'',m.funcionario||'',m.fornecedor||'',m.obs||'']));
+  downloadCSV(rows,'historico_estoque.csv');
+}
+
+// ======= RELATÓRIOS =======
+function setupRel(){
+  const el=document.getElementById('rel-mes');
+  if(!el.value) el.value=mesAtual();
+}
+
+// --- PDF ---
+function pdfBase(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  return doc;
+}
+function pdfHeader(doc,titulo,subtitulo){
+  doc.setFillColor(26,26,26);doc.rect(0,0,297,18,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('ESTOQUE INDUSTRIAL',10,12);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.text(titulo,100,12);
+  doc.setFontSize(8);doc.text(`Emitido em: ${fmtDate(today())}`,240,12);
+  if(subtitulo){doc.setTextColor(100,100,100);doc.setFontSize(9);doc.text(subtitulo,10,24);}
+  doc.setTextColor(0,0,0);
+  return subtitulo?28:22;
+}
+function pdfPosicaoEstoque(){
+  const itens=getItens().sort((a,b)=>(a.setor||'').localeCompare(b.setor||'')||(a.descricao||'').localeCompare(b.descricao||''));
+  if(!itens.length){warn2('Nenhum item cadastrado');return}
+  const doc=pdfBase();
+  const startY=pdfHeader(doc,'POSIÇÃO DE ESTOQUE',`Total de itens: ${itens.length}`);
+  doc.autoTable({
+    startY,head:[['Código','Descrição','Setor','Un.','Estoque Atual','Mínimo','Status','Fornecedor']],
+    body:itens.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return[i.codigo||'-',i.descricao,{caldeiraria:'Caldeiraria',jateamento:'Jateamento',pintura:'Pintura',geral:'Geral'}[i.setor]||i.setor,i.unidade,fmtQtd(q),fmtQtd(m),q===0?'SEM ESTOQUE':q<=m?'BAIXO':'OK',i.fornecedorPrincipal||'-']}),
+    styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[230,92,0],textColor:255,fontSize:8,fontStyle:'bold'},
+    columnStyles:{4:{halign:'center'},5:{halign:'center'},6:{halign:'center'}},
+    didDrawCell:d=>{if(d.section==='body'&&d.column.index===6){const st=d.cell.raw;if(st==='SEM ESTOQUE'){d.cell.styles.textColor=[220,38,38];d.cell.styles.fontStyle='bold';}else if(st==='BAIXO'){d.cell.styles.textColor=[217,119,6];}}},
+    alternateRowStyles:{fillColor:[248,249,250]},margin:{left:8,right:8}
+  });
+  previewPdf(doc,'posicao_estoque.pdf');
+}
+function pdfAlertas(){
+  const alertas=getItens().filter(i=>parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0));
+  if(!alertas.length){ok2('Nenhum alerta no momento!');return}
+  const doc=pdfBase();
+  const startY=pdfHeader(doc,'RELATÓRIO DE ALERTAS',`Itens com estoque abaixo do mínimo: ${alertas.length}`);
+  doc.autoTable({
+    startY,head:[['Código','Descrição','Setor','Un.','Estoque Atual','Mínimo','Deficit','Fornecedor']],
+    body:alertas.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return[i.codigo||'-',i.descricao,{caldeiraria:'Caldeiraria',jateamento:'Jateamento',pintura:'Pintura',geral:'Geral'}[i.setor]||i.setor,i.unidade,fmtQtd(q),fmtQtd(m),fmtQtd(m-q),i.fornecedorPrincipal||'-']}),
+    styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[220,38,38],textColor:255,fontSize:8,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[255,248,248]},margin:{left:8,right:8}
+  });
+  previewPdf(doc,'alertas_estoque.pdf');
+}
+function pdfHistoricoMes(){
+  const mes=document.getElementById('rel-mes').value||mesAtual();
+  const movs=getMovs().filter(m=>m.data&&m.data.startsWith(mes)).sort((a,b)=>a.data.localeCompare(b.data));
+  if(!movs.length){warn2(`Nenhuma movimentação em ${mes}`);return}
+  const mesLabel=new Date(mes+'-01').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const doc=pdfBase();
+  const startY=pdfHeader(doc,`HISTÓRICO — ${mesLabel.toUpperCase()}`,`Total de movimentações: ${movs.length}`);
+  doc.autoTable({
+    startY,head:[['Data','Tipo','Código','Item','Setor','Qtd','Un.','Val.Un.','Fornec./Func.','Obs']],
+    body:movs.map(m=>[fmtDate(m.data),m.tipo.toUpperCase(),m.itemCod||'-',m.itemDesc||'-',m.setor||'-',fmtQtd(m.quantidade),m.itemUn||'',m.tipo==='entrada'?'R$ '+fmtNum(m.valorUnit||0):'-',m.tipo==='entrada'?(m.fornecedor||'-'):(m.funcionario||'-'),m.obs||'-']),
+    styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[26,26,26],textColor:255,fontSize:7.5,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[248,249,250]},margin:{left:6,right:6}
+  });
+  previewPdf(doc,`historico_${mes}.pdf`);
+}
+function pdfConsumoSetor(){
+  const movs=getMovs().filter(m=>m.tipo==='saida');
+  if(!movs.length){warn2('Nenhuma saída registrada');return}
+  const setores=['caldeiraria','jateamento','pintura','geral'];
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  let y=pdfHeader(doc,'CONSUMO POR SETOR','');
+  setores.forEach(s=>{
+    const sMovs=movs.filter(m=>m.setor===s);if(!sMovs.length)return;
+    const consumo={};sMovs.forEach(m=>{const k=m.itemCod+'|'+m.itemDesc+'|'+(m.itemUn||'');consumo[k]=(consumo[k]||0)+parseFloat(m.quantidade||0)});
+    const label={caldeiraria:'CALDEIRARIA',jateamento:'JATEAMENTO',pintura:'PINTURA',geral:'GERAL'}[s];
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(230,92,0);
+    doc.text(label,10,y+6);doc.setTextColor(0,0,0);
+    doc.autoTable({startY:y+9,head:[['Código','Item','Un.','Qtd Total Saída']],
+      body:Object.entries(consumo).map(([k,qtd])=>{const[cod,desc,un]=k.split('|');return[cod,desc,un,fmtQtd(qtd)]}),
+      styles:{fontSize:8},headStyles:{fillColor:[230,92,0],textColor:255,fontSize:8},margin:{left:10,right:10}});
+    y=doc.lastAutoTable.finalY+8;
+    if(y>260){doc.addPage();y=15;}
+  });
+  previewPdf(doc,'consumo_por_setor.pdf');
+}
+
+// --- EXCEL ---
+function excelCompleto(){
+  const wb=XLSX.utils.book_new();
+  const mes=document.getElementById('rel-mes').value||mesAtual();
+  // Aba 1: Posição de Estoque
+  const itens=getItens();
+  const wsItens=XLSX.utils.aoa_to_sheet([
+    ['POSIÇÃO DE ESTOQUE - '+new Date().toLocaleDateString('pt-BR')],
+    [],
+    ['Código','Descrição','Setor','Unidade','Estoque Atual','Estoque Mínimo','Status','Fornecedor Principal','Observação'],
+    ...itens.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return[i.codigo,i.descricao,i.setor,i.unidade,q,m,q===0?'SEM ESTOQUE':q<=m?'BAIXO':'OK',i.fornecedorPrincipal||'',i.observacao||'']})
+  ]);
+  wsItens['!cols']=[{wch:12},{wch:35},{wch:14},{wch:8},{wch:14},{wch:14},{wch:14},{wch:25},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsItens,'Posição de Estoque');
+  // Aba 2: Histórico do Mês
+  const movsMes=getMovs().filter(m=>m.data&&m.data.startsWith(mes)).sort((a,b)=>a.data.localeCompare(b.data));
+  const wsMovs=XLSX.utils.aoa_to_sheet([
+    ['HISTÓRICO — '+mes],
+    [],
+    ['Data','Tipo','Código','Item','Setor','Quantidade','Unidade','Valor Unit.','Total','NF','Funcionário','Fornecedor','Obs/Motivo'],
+    ...movsMes.map(m=>[fmtDate(m.data),m.tipo.toUpperCase(),m.itemCod||'',m.itemDesc||'',m.setor||'',parseFloat(m.quantidade||0),m.itemUn||'',m.tipo==='entrada'?parseFloat(m.valorUnit||0):'',m.tipo==='entrada'?parseFloat(m.quantidade||0)*parseFloat(m.valorUnit||0):'',m.nf||'',m.funcionario||'',m.fornecedor||'',m.obs||''])
+  ]);
+  wsMovs['!cols']=[{wch:11},{wch:10},{wch:10},{wch:35},{wch:14},{wch:10},{wch:8},{wch:12},{wch:12},{wch:14},{wch:20},{wch:25},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsMovs,'Histórico do Mês');
+  // Aba 3: Resumo por Setor
+  const setores=['caldeiraria','jateamento','pintura','geral'];
+  const resumoRows=[['RESUMO POR SETOR'],[],['Setor','Itens Cadastrados','Total Entradas (mês)','Total Saídas (mês)','Itens em Alerta']];
+  setores.forEach(s=>{
+    const its=itens.filter(i=>i.setor===s);
+    const ent=movsMes.filter(m=>m.tipo==='entrada'&&m.setor===s).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+    const sai=movsMes.filter(m=>m.tipo==='saida'&&m.setor===s).reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+    const alr=its.filter(i=>parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0)).length;
+    resumoRows.push([{caldeiraria:'Caldeiraria',jateamento:'Jateamento',pintura:'Pintura',geral:'Geral'}[s],its.length,ent,sai,alr]);
+  });
+  const wsResumo=XLSX.utils.aoa_to_sheet(resumoRows);
+  wsResumo['!cols']=[{wch:16},{wch:20},{wch:22},{wch:22},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo por Setor');
+  // Aba 4: Alertas
+  const alertas=itens.filter(i=>parseFloat(i.qtdAtual||0)<=parseFloat(i.qtdMinima||0));
+  const wsAlt=XLSX.utils.aoa_to_sheet([
+    ['ALERTAS DE ESTOQUE MÍNIMO'],[],
+    ['Código','Descrição','Setor','Unidade','Estoque Atual','Estoque Mínimo','Deficit','Fornecedor'],
+    ...alertas.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return[i.codigo,i.descricao,i.setor,i.unidade,q,m,m-q,i.fornecedorPrincipal||'']})
+  ]);
+  wsAlt['!cols']=[{wch:12},{wch:35},{wch:14},{wch:8},{wch:14},{wch:14},{wch:10},{wch:25}];
+  XLSX.utils.book_append_sheet(wb,wsAlt,'Alertas');
+  // Aba 5: Fornecedores
+  const wsForn=XLSX.utils.aoa_to_sheet([
+    ['FORNECEDORES'],[],
+    ['Nome / Empresa','Contato','Telefone','E-mail','Observação'],
+    ...getForn().map(f=>[f.nome,f.contato||'',f.telefone||'',f.email||'',f.obs||''])
+  ]);
+  wsForn['!cols']=[{wch:30},{wch:20},{wch:16},{wch:28},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsForn,'Fornecedores');
+  XLSX.writeFile(wb,`estoque_completo_${mes}.xlsx`);ok2('Excel gerado com 5 abas!');
+}
+function excelMovimentacoes(){
+  const mes=document.getElementById('rel-mes').value||mesAtual();
+  const movs=getMovs().filter(m=>m.data&&m.data.startsWith(mes)).sort((a,b)=>a.data.localeCompare(b.data));
+  if(!movs.length){warn2(`Nenhuma movimentação em ${mes}`);return}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['MOVIMENTAÇÕES — '+mes],[],
+    ['Data','Tipo','Código','Item','Setor','Qtd','Un.','Valor Un.','Total','NF','Funcionário','Fornecedor','Obs/Motivo'],
+    ...movs.map(m=>[fmtDate(m.data),m.tipo.toUpperCase(),m.itemCod||'',m.itemDesc||'',m.setor||'',parseFloat(m.quantidade||0),m.itemUn||'',m.tipo==='entrada'?parseFloat(m.valorUnit||0):'',m.tipo==='entrada'?parseFloat(m.quantidade||0)*parseFloat(m.valorUnit||0):'',m.nf||'',m.funcionario||'',m.fornecedor||'',m.obs||''])
+  ]);
+  ws['!cols']=[{wch:11},{wch:10},{wch:10},{wch:35},{wch:14},{wch:10},{wch:8},{wch:12},{wch:12},{wch:14},{wch:20},{wch:25},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Movimentações');
+  XLSX.writeFile(wb,`movimentacoes_${mes}.xlsx`);ok2('Excel gerado!');
+}
+function excelConsumoFuncionario(){
+  const movs=getMovs().filter(m=>m.tipo==='saida');
+  if(!movs.length){warn2('Nenhuma saída registrada');return}
+  const consumo={};
+  movs.forEach(m=>{const k=m.funcionario||'Sem nome';if(!consumo[k])consumo[k]=[];consumo[k].push(m)});
+  const wb=XLSX.utils.book_new();
+  Object.entries(consumo).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([func,ms])=>{
+    const rows=[[`CONSUMO — ${func}`],[],['Data','Código','Item','Setor','Qtd','Unidade','Obs'],...ms.sort((a,b)=>b.data.localeCompare(a.data)).map(m=>[fmtDate(m.data),m.itemCod||'',m.itemDesc||'',m.setor||'',parseFloat(m.quantidade||0),m.itemUn||'',m.obs||''])];
+    const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:11},{wch:10},{wch:35},{wch:14},{wch:10},{wch:8},{wch:25}];
+    XLSX.utils.book_append_sheet(wb,ws,func.slice(0,31));
+  });
+  XLSX.writeFile(wb,'consumo_por_funcionario.xlsx');ok2('Excel gerado!');
+}
+function excelItens(){
+  const itens=getItens().sort((a,b)=>(a.setor||'').localeCompare(b.setor||'')||(a.descricao||'').localeCompare(b.descricao||''));
+  if(!itens.length){warn2('Nenhum item cadastrado');return}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['LISTA DE ITENS — '+new Date().toLocaleDateString('pt-BR')],[],
+    ['Código','Descrição','Setor','Unidade','Estoque Atual','Estoque Mínimo','Status','Fornecedor Principal','Observação'],
+    ...itens.map(i=>{const q=parseFloat(i.qtdAtual||0),m=parseFloat(i.qtdMinima||0);return[i.codigo,i.descricao,i.setor,i.unidade,q,m,q===0?'SEM ESTOQUE':q<=m?'BAIXO':'OK',i.fornecedorPrincipal||'',i.observacao||'']})
+  ]);
+  ws['!cols']=[{wch:12},{wch:38},{wch:14},{wch:8},{wch:14},{wch:14},{wch:14},{wch:28},{wch:25}];
+  XLSX.utils.book_append_sheet(wb,ws,'Itens');
+  XLSX.writeFile(wb,'itens_estoque.xlsx');ok2('Excel gerado!');
+}
+
+// --- BACKUP ---
+function fazerBackup(){
+  const dados={versao:'1.0',data:new Date().toISOString(),itens:getItens(),movimentacoes:getMovs(),fornecedores:getForn()};
+  const blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`backup_estoque_${today()}.json`;a.click();
+  ok2('Backup salvo com sucesso!');
+}
+function restaurarBackup(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const dados=JSON.parse(ev.target.result);
+      if(!dados.itens||!dados.movimentacoes){alert2('Arquivo inválido! Não é um backup do Estoque Industrial.');return}
+      showConfirm('Restaurar Backup',`Restaurar backup de <b>${fmtDate(dados.data?dados.data.slice(0,10):'-')}</b>?<br><b style="color:var(--danger)">Atenção: todos os dados atuais serão substituídos!</b>`,()=>{
+        setItens(dados.itens||[]);setMovs(dados.movimentacoes||[]);setForn(dados.fornecedores||[]);
+        ok2(`Backup restaurado! ${dados.itens.length} itens, ${dados.movimentacoes.length} movimentações.`);
+        renderDash();
+      });
+    }catch{alert2('Erro ao ler o arquivo de backup!')}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+function confirmarLimparDados(){
+  showConfirm('⚠️ LIMPAR TODOS OS DADOS',`<span style="color:var(--danger)"><b>ATENÇÃO!</b> Esta ação apagará TODOS os itens, movimentações e fornecedores permanentemente!</span><br><br>Recomenda-se fazer um backup antes.`,()=>{
+    localStorage.removeItem(K_ITENS);localStorage.removeItem(K_MOVS);localStorage.removeItem(K_FORN);
+    ok2('Todos os dados foram apagados.');renderDash();
+  });
+}
+
+// ======= FORNECEDORES =======
+function renderForn(){
+  let forn=getForn();
+  const srch=(document.getElementById('srch-forn').value||'').toLowerCase();
+  if(srch) forn=forn.filter(f=>(f.nome||'').toLowerCase().includes(srch));
+  document.getElementById('tbl-forn').innerHTML=forn.length?forn.map(f=>`<tr><td><b>${f.nome}</b></td><td>${f.contato||'-'}</td><td>${f.telefone||'-'}</td><td>${f.email||'-'}</td><td>${f.obs||'-'}</td>
+    <td class="row-actions"><button class="btn btn-sec btn-xs" onclick="editForn('${f.id}')">✏️</button><button class="btn btn-dan btn-xs" onclick="confirmDeleteForn('${f.id}')">🗑</button></td></tr>`).join(''):`<tr><td colspan="6" class="empty">Nenhum fornecedor cadastrado</td></tr>`;
+}
+function openFornModal(){
+  document.getElementById('modal-forn-overlay').classList.add('open');
+  document.getElementById('forn-edit-id').value='';
+  document.getElementById('modal-forn-title').textContent='Novo Fornecedor';
+  ['forn-nome','forn-contato','forn-tel','forn-email','forn-obs'].forEach(f=>document.getElementById(f).value='');
+}
+function editForn(id){
+  const f=getForn().find(x=>x.id===id);if(!f)return;
+  openFornModal();
+  document.getElementById('forn-edit-id').value=id;
+  document.getElementById('modal-forn-title').textContent='Editar Fornecedor';
+  document.getElementById('forn-nome').value=f.nome||'';
+  document.getElementById('forn-contato').value=f.contato||'';
+  document.getElementById('forn-tel').value=f.telefone||'';
+  document.getElementById('forn-email').value=f.email||'';
+  document.getElementById('forn-obs').value=f.obs||'';
+}
+function salvarForn(){
+  const id=document.getElementById('forn-edit-id').value;
+  const nome=document.getElementById('forn-nome').value.trim();
+  if(!nome){alert2('Informe o nome do fornecedor');return}
+  const dados={nome,contato:document.getElementById('forn-contato').value.trim(),telefone:document.getElementById('forn-tel').value.trim(),email:document.getElementById('forn-email').value.trim(),obs:document.getElementById('forn-obs').value.trim()};
+  let forn=getForn();
+  if(id){forn=forn.map(f=>f.id===id?{...f,...dados}:f);ok2('Fornecedor atualizado!');}
+  else{forn.push({id:uid(),...dados});ok2('Fornecedor cadastrado!');}
+  setForn(forn);closeFornModal();renderForn();
+  updateFornDatalist('list-forn');updateFornDatalist('list-forn-item');
+}
+function closeFornModal(){document.getElementById('modal-forn-overlay').classList.remove('open')}
+function closeModalForn(e){if(e.target===document.getElementById('modal-forn-overlay'))closeFornModal()}
+function confirmDeleteForn(id){
+  const f=getForn().find(x=>x.id===id);if(!f)return;
+  showConfirm('Excluir Fornecedor',`Excluir <b>${f.nome}</b>?`,()=>{setForn(getForn().filter(x=>x.id!==id));renderForn();ok2('Fornecedor excluído!')});
+}
+
+// ======= DATALISTS =======
+function updateFornDatalist(dlId){const dl=document.getElementById(dlId);if(!dl)return;dl.innerHTML=getForn().map(f=>`<option value="${f.nome}">${f.telefone?'  Tel: '+f.telefone:''}</option>`).join('')}
+function updateItensDatalist(dlId){const dl=document.getElementById(dlId);if(!dl)return;dl.innerHTML=getItens().map(i=>`<option value="[${i.codigo}] ${i.descricao}">`).join('')}
+function updateFuncsDatalist(){const funcs=[...new Set(getMovs().filter(m=>m.funcionario).map(m=>m.funcionario))];const dl=document.getElementById('list-funcs');if(!dl)return;dl.innerHTML=funcs.map(f=>`<option value="${f}">`).join('')}
+
+// ======= CONFIRM MODAL =======
+function showConfirm(title,msg,cb){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').innerHTML=msg;
+  document.getElementById('modal-confirm-overlay').classList.add('open');
+  document.getElementById('confirm-ok').onclick=()=>{cb();closeConfirm()};
+}
+function closeConfirm(){document.getElementById('modal-confirm-overlay').classList.remove('open')}
+
+// ======= CSV =======
+function downloadCSV(rows,filename){
+  const bom='\uFEFF';
+  const csv=bom+rows.map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(';')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=filename;a.click();
+}
+
+
+// ============================================================
+// BANCO DE MATERIAIS INDUSTRIAIS — Caldeiraria, Jateamento, Pintura
+// ============================================================
+const BANCO_MATERIAIS = [
+  // CALDEIRARIA — EPI
+  {n:"Mascara de Solda Automatica",u:"UN",s:"caldeiraria",c:"EPI",d:"Mascara de escurecimento automatico para soldador"},
+  {n:"Mascara de Solda Visor Fixo",u:"UN",s:"caldeiraria",c:"EPI",d:"Mascara com visor fixo para soldagem"},
+  {n:"Oculos para Soldador",u:"UN",s:"caldeiraria",c:"EPI",d:"Oculos de protecao escuro para soldagem"},
+  {n:"Oculos Transparente",u:"UN",s:"geral",c:"EPI",d:"Oculos de protecao transparente incolor"},
+  {n:"Luva de Vaqueta",u:"PAR",s:"caldeiraria",c:"EPI",d:"Luva de couro vaqueta para soldagem e corte"},
+  {n:"Luva de Raspa",u:"PAR",s:"caldeiraria",c:"EPI",d:"Luva de raspa de couro para trabalhos pesados"},
+  {n:"Luva de Malha de Algodao",u:"PAR",s:"geral",c:"EPI",d:"Luva de malha algodao para manuseio geral"},
+  {n:"Luva Nitrilica",u:"PAR",s:"geral",c:"EPI",d:"Luva descartavel nitrilica resistente a solventes"},
+  {n:"Avental de Raspa",u:"UN",s:"caldeiraria",c:"EPI",d:"Avental de couro raspa para soldagem"},
+  {n:"Perneira de Raspa",u:"PAR",s:"caldeiraria",c:"EPI",d:"Perneira de couro raspa para soldagem"},
+  {n:"Mangote de Raspa",u:"PAR",s:"caldeiraria",c:"EPI",d:"Mangote de couro para protecao do braco na solda"},
+  {n:"Protetor Auricular Plug",u:"UN",s:"geral",c:"EPI",d:"Protetor auricular descartavel tipo plug espuma"},
+  {n:"Protetor Auricular Concha",u:"UN",s:"geral",c:"EPI",d:"Protetor auricular tipo concha ajustavel"},
+  {n:"Capacete de Seguranca",u:"UN",s:"geral",c:"EPI",d:"Capacete de seguranca aba total classe B"},
+  {n:"Botina de Seguranca",u:"PAR",s:"geral",c:"EPI",d:"Botina com biqueira de aco e palmilha antiestatica"},
+  {n:"Respirador PFF2",u:"UN",s:"geral",c:"EPI",d:"Mascara respirador descartavel PFF2 para poeira"},
+  {n:"Respirador PFF3",u:"UN",s:"caldeiraria",c:"EPI",d:"Mascara respirador PFF3 para fumaca de solda"},
+  {n:"Cinto de Seguranca",u:"UN",s:"geral",c:"EPI",d:"Cinto de seguranca tipo paraquedista com talabarte"},
+  {n:"Trava Quedas Retratil",u:"UN",s:"geral",c:"EPI",d:"Trava quedas retratil para trabalho em altura"},
+  // CALDEIRARIA — Abrasivos
+  {n:"Disco de Corte 4.1/2 (115mm)",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de corte fino 115mm para esmerilhadeira"},
+  {n:"Disco de Corte 7 (180mm)",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de corte 180mm para esmerilhadeira grande"},
+  {n:"Disco de Corte 9 (230mm)",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de corte 230mm para esmerilhadeira grande"},
+  {n:"Disco de Desbaste 4.1/2 (115mm)",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de desbaste 115mm grao grosso"},
+  {n:"Disco de Desbaste 7 (180mm)",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de desbaste 180mm"},
+  {n:"Disco de Lixa 4.1/2 G36",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de lixa fibra 115mm grao 36"},
+  {n:"Disco de Lixa 4.1/2 G60",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de lixa fibra 115mm grao 60"},
+  {n:"Disco de Lixa 4.1/2 G80",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de lixa fibra 115mm grao 80"},
+  {n:"Disco de Lixa 4.1/2 G120",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Disco de lixa fibra 115mm grao 120"},
+  {n:"Pirulito de Retifica",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Pirulito abrasivo montado para retifica reta"},
+  {n:"Rebolo para Esmeril",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Rebolo abrasivo para esmeril de bancada"},
+  {n:"Lamina de Serra Manual Metal 24dpp",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Lamina de serra para metal 24 dentes por polegada"},
+  {n:"Serra Copo Bimetalica 2pol",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Serra copo bimetalica 2 polegadas para metal"},
+  {n:"Serra Copo Bimetalica 3pol",u:"UN",s:"caldeiraria",c:"Abrasivos",d:"Serra copo bimetalica 3 polegadas para metal"},
+  // CALDEIRARIA — Consumiveis de Solda
+  {n:"Eletrodo 2.5mm E6013",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido 2,5mm E6013 aco carbono"},
+  {n:"Eletrodo 3.25mm E6013",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido 3,25mm E6013 aco carbono"},
+  {n:"Eletrodo 4.0mm E6013",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido 4,0mm E6013"},
+  {n:"Eletrodo 2.5mm E7018",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido 2,5mm E7018 baixo hidrogenio"},
+  {n:"Eletrodo 3.25mm E7018",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido 3,25mm E7018 baixo hidrogenio"},
+  {n:"Eletrodo Inox 2.5mm E308",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido inox 2,5mm E308-16"},
+  {n:"Eletrodo Inox 3.25mm E308",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo revestido inox 3,25mm E308-16"},
+  {n:"Eletrodo Ferro Fundido",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo para solda de ferro fundido"},
+  {n:"Arame MIG ER70S-6 0.8mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Arame de solda MIG ER70S-6 0,8mm aco carbono"},
+  {n:"Arame MIG ER70S-6 1.0mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Arame de solda MIG ER70S-6 1,0mm aco carbono"},
+  {n:"Arame MIG ER70S-6 1.2mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Arame de solda MIG ER70S-6 1,2mm aco carbono"},
+  {n:"Arame MIG Inox ER308L 0.8mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Arame MIG inox ER308L 0,8mm"},
+  {n:"Arame MIG Inox ER308L 1.0mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Arame MIG inox ER308L 1,0mm"},
+  {n:"Arame TIG ER70S-2 2.4mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Vareta TIG aco carbono ER70S-2 2,4mm"},
+  {n:"Arame TIG Inox ER308L 2.4mm",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Vareta TIG inox ER308L 2,4mm"},
+  {n:"Bocal para Tocha MIG",u:"UN",s:"caldeiraria",c:"Consumivel Solda",d:"Bocal de reposicao para tocha MIG"},
+  {n:"Bico de Contato Tocha MIG 0.8",u:"UN",s:"caldeiraria",c:"Consumivel Solda",d:"Bico de contato 0,8mm para tocha MIG"},
+  {n:"Bico de Contato Tocha MIG 1.0",u:"UN",s:"caldeiraria",c:"Consumivel Solda",d:"Bico de contato 1,0mm para tocha MIG"},
+  {n:"Difusor para Tocha MIG",u:"UN",s:"caldeiraria",c:"Consumivel Solda",d:"Difusor de gas de reposicao para tocha MIG"},
+  {n:"Eletrodo de Tungstenio TIG 2.4mm",u:"UN",s:"caldeiraria",c:"Consumivel Solda",d:"Eletrodo de tungstenio 2,4mm para tocha TIG"},
+  {n:"Decapante para Solda Inox",u:"LT",s:"caldeiraria",c:"Consumivel Solda",d:"Decapante liquido para limpeza de solda inox"},
+  {n:"Fluxo para Solda Submersa",u:"KG",s:"caldeiraria",c:"Consumivel Solda",d:"Fluxo granulado para solda submersa"},
+  // CALDEIRARIA — Gases
+  {n:"Dioxido de Carbono CO2",u:"m³",s:"caldeiraria",c:"Gases",d:"Gas CO2 para solda MIG/MAG"},
+  {n:"Argonio",u:"m³",s:"caldeiraria",c:"Gases",d:"Gas argonio puro para solda TIG e MIG inox"},
+  {n:"Mistura Argonio CO2 75/25",u:"m³",s:"caldeiraria",c:"Gases",d:"Mistura 75% argonio + 25% CO2 para MIG"},
+  {n:"Oxigenio Industrial",u:"m³",s:"caldeiraria",c:"Gases",d:"Oxigenio industrial para corte oxicombustivel"},
+  {n:"Acetileno",u:"m³",s:"caldeiraria",c:"Gases",d:"Gas acetileno para corte e aquecimento"},
+  {n:"Nitrogenio Industrial",u:"m³",s:"caldeiraria",c:"Gases",d:"Nitrogenio para purga de solda e testes hidrostaticos"},
+  {n:"Helio",u:"m³",s:"caldeiraria",c:"Gases",d:"Helio para solda TIG de alta penetracao"},
+  // CALDEIRARIA — Ferramentas
+  {n:"Broca HSS 3mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 3mm"},
+  {n:"Broca HSS 4mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 4mm"},
+  {n:"Broca HSS 5mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 5mm"},
+  {n:"Broca HSS 6mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 6mm"},
+  {n:"Broca HSS 8mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 8mm"},
+  {n:"Broca HSS 10mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 10mm"},
+  {n:"Broca HSS 12mm",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Broca de aco rapido HSS para metal 12mm"},
+  {n:"Giz de Marcacao Branco",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Giz branco para marcacao em superficie metalica"},
+  {n:"Caneta Marcadora Industrial",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Caneta marcadora industrial permanente ponta grossa"},
+  {n:"Grampo Tipo C 4pol",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Grampo tipo C 4 polegadas para fixacao na solda"},
+  {n:"Grampo Tipo C 6pol",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Grampo tipo C 6 polegadas para fixacao na solda"},
+  {n:"Grampo Tipo C 8pol",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Grampo tipo C 8 polegadas"},
+  {n:"Martelo 1kg",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Martelo de bola aco 1kg com cabo madeira"},
+  {n:"Talhadeira",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Talhadeira aco para corte e rebarbacao"},
+  {n:"Puncao de Marcar",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Puncao automatico para marcacao de pecas"},
+  {n:"Esquadro de Solda 90 graus",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Esquadro magnetico ajustavel para solda"},
+  {n:"Nivel de Bolha",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Nivel de bolha para verificacao de alinhamento"},
+  {n:"Graxa Multiuso",u:"KG",s:"geral",c:"Ferramentas",d:"Graxa multiuso para manutencao de rolamentos"},
+  {n:"Oleo de Corte",u:"LT",s:"caldeiraria",c:"Ferramentas",d:"Oleo lubrificante para furacao e usinagem"},
+  {n:"Pasta de Zinco",u:"UN",s:"caldeiraria",c:"Ferramentas",d:"Pasta de zinco para protecao de soldas"},
+  // CALDEIRARIA — Fixacao
+  {n:"Parafuso Sextavado 1/4 x 1pol",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso sext. 1/4 x 1 polegada zincado CX 100un"},
+  {n:"Parafuso Sextavado 5/16 x 1pol",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso sext. 5/16 x 1 polegada zincado CX 100un"},
+  {n:"Parafuso Sextavado 3/8 x 1.1/2pol",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso sext. 3/8 x 1.1/2 polegada zincado CX 50un"},
+  {n:"Parafuso Sextavado 1/2 x 2pol",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso sext. 1/2 x 2 polegadas zincado CX 25un"},
+  {n:"Porca Sextavada 1/4",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Porca sextavada 1/4 zincada CX 100un"},
+  {n:"Porca Sextavada 3/8",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Porca sextavada 3/8 zincada CX 50un"},
+  {n:"Porca Sextavada 1/2",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Porca sextavada 1/2 zincada CX 25un"},
+  {n:"Arruela Lisa 1/4",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Arruela lisa 1/4 zincada CX 100un"},
+  {n:"Arruela Lisa 3/8",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Arruela lisa 3/8 zincada CX 100un"},
+  {n:"Arruela de Pressao 3/8",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Arruela de pressao 3/8 zincada CX 100un"},
+  {n:"Chumbador M8",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Chumbador expansao M8 x 65mm CX 50un"},
+  {n:"Chumbador M10",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Chumbador expansao M10 x 80mm CX 25un"},
+  {n:"Chumbador M12",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Chumbador expansao M12 x 100mm CX 10un"},
+  // JATEAMENTO — EPI
+  {n:"Macacao para Jatista Descartavel",u:"UN",s:"jateamento",c:"EPI Jato",d:"Macacao descartavel branco Tyvek para jateamento"},
+  {n:"Macacao para Jatista Reutilizavel",u:"UN",s:"jateamento",c:"EPI Jato",d:"Macacao de nylon reforcado reutilizavel para jato"},
+  {n:"Capacete para Jateamento",u:"UN",s:"jateamento",c:"EPI Jato",d:"Capacete tipo escafandro com viseira para jato abrasivo"},
+  {n:"Viseira para Capacete de Jato",u:"UN",s:"jateamento",c:"EPI Jato",d:"Viseira de reposicao transparente para capacete de jato"},
+  {n:"Luva para Jateamento",u:"PAR",s:"jateamento",c:"EPI Jato",d:"Luva de raspa grossa reforcada para jateamento"},
+  {n:"Perneira para Jateamento",u:"PAR",s:"jateamento",c:"EPI Jato",d:"Perneira reforcada para protecao no jateamento"},
+  {n:"Mangote para Jateamento",u:"PAR",s:"jateamento",c:"EPI Jato",d:"Mangote de couro grosso para protecao dos bracos no jato"},
+  {n:"Respirador com Linha de Ar",u:"UN",s:"jateamento",c:"EPI Jato",d:"Respirador com linha de ar comprimido para jateamento"},
+  {n:"Filtro Respirador de Ar",u:"UN",s:"jateamento",c:"EPI Jato",d:"Filtro de reposicao para respirador de linha de ar"},
+  // JATEAMENTO — Abrasivos
+  {n:"Granalha de Aco Esferica S330",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granalha esferica S330 para jateamento de superficies"},
+  {n:"Granalha de Aco Esferica S230",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granalha esferica S230 grao fino"},
+  {n:"Granalha de Aco Angular G25",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granalha angular G25 para alta rugosidade"},
+  {n:"Oxido de Aluminio 36 mesh",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Abrasivo oxido de aluminio branco 36 mesh"},
+  {n:"Oxido de Aluminio 80 mesh",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Abrasivo oxido de aluminio branco 80 mesh fino"},
+  {n:"Bico de Jato Ceramica 3/8",u:"UN",s:"jateamento",c:"Componentes Jato",d:"Bico de jato em ceramica diametro 3/8 interno"},
+  {n:"Bico de Jato Tungstenio 3/8",u:"UN",s:"jateamento",c:"Componentes Jato",d:"Bico de jato carbeto tungstenio 3/8 alta durabilidade"},
+  {n:"Bico de Jato Tungstenio 1/2",u:"UN",s:"jateamento",c:"Componentes Jato",d:"Bico de jato carbeto tungstenio 1/2 alta durabilidade"},
+  {n:"Mangueira Jato Abrasivo 1.1/4",u:"M",s:"jateamento",c:"Componentes Jato",d:"Mangueira borracha reforcada para jato abrasivo 1.1/4"},
+  {n:"Mangueira Ar Comprimido 1/2",u:"M",s:"jateamento",c:"Componentes Jato",d:"Mangueira para ar comprimido 1/2 espiral"},
+  {n:"Acoplamento Guilhotina para Jato",u:"UN",s:"jateamento",c:"Componentes Jato",d:"Acoplamento tipo guilhotina para mangueira de jato"},
+  {n:"Valvula Dosadora Abrasivo",u:"UN",s:"jateamento",c:"Componentes Jato",d:"Valvula dosadora de abrasivo para camara de jato"},
+  {n:"Lona para Cabine de Jato",u:"M²",s:"jateamento",c:"Componentes Jato",d:"Lona vinilica reforcada para vedacao de cabine de jato"},
+  {n:"Fita de Mascaramento para Jato",u:"RL",s:"jateamento",c:"Componentes Jato",d:"Fita adesiva forte para mascaramento durante jateamento"},
+  // PINTURA — EPI
+  {n:"Macacao para Pintor Descartavel",u:"UN",s:"pintura",c:"EPI Pintura",d:"Macacao descartavel branco Tyvek para pintura"},
+  {n:"Macacao para Pintor Reutilizavel",u:"UN",s:"pintura",c:"EPI Pintura",d:"Macacao de nylon reutilizavel para pintura industrial"},
+  {n:"Respirador Meia Face Pintura",u:"UN",s:"pintura",c:"EPI Pintura",d:"Respirador meia face para vapores organicos e pintura"},
+  {n:"Cartucho Vapores Organicos",u:"UN",s:"pintura",c:"EPI Pintura",d:"Cartucho de reposicao para vapores organicos/solventes"},
+  {n:"Pre-filtro para Respirador",u:"UN",s:"pintura",c:"EPI Pintura",d:"Pre-filtro de reposicao para respirador meia face"},
+  {n:"Oculos Ampla Visao Pintura",u:"UN",s:"pintura",c:"EPI Pintura",d:"Oculos de protecao ampla visao para pintura"},
+  {n:"Luva Nitrilica para Pintura",u:"PAR",s:"pintura",c:"EPI Pintura",d:"Luva nitrilica grossa resistente a solventes e tintas"},
+  {n:"Touca de Protecao",u:"UN",s:"pintura",c:"EPI Pintura",d:"Touca descartavel de protecao para cabelo"},
+  // PINTURA — Tintas
+  {n:"Tinta Epoxi Fundo Anticorrosivo",u:"LT",s:"pintura",c:"Tinta",d:"Tinta epoxi primer fundo anticorrosivo bicomponente"},
+  {n:"Tinta Epoxi Acabamento",u:"LT",s:"pintura",c:"Tinta",d:"Tinta epoxi acabamento bicomponente para ambientes industriais"},
+  {n:"Tinta Poliuretano Acabamento",u:"LT",s:"pintura",c:"Tinta",d:"Tinta poliuretano acabamento brilhante resistente UV"},
+  {n:"Tinta Borracha Clorada",u:"LT",s:"pintura",c:"Tinta",d:"Tinta borracha clorada para imersao e tanques"},
+  {n:"Tinta Inorganica de Zinco",u:"LT",s:"pintura",c:"Tinta",d:"Primer rico em zinco inorganico protecao catodica"},
+  {n:"Zarcao Anticorrosivo",u:"LT",s:"pintura",c:"Tinta",d:"Zarcao oxido de ferro vermelho primer anticorrosivo"},
+  {n:"Tinta Alquidica Sintetica",u:"LT",s:"pintura",c:"Tinta",d:"Esmalte sintetico alquidico para estruturas metalicas"},
+  {n:"Endurecedor Epoxi",u:"LT",s:"pintura",c:"Tinta",d:"Endurecedor componente B para tinta epoxi bicomponente"},
+  {n:"Thinner para Epoxi",u:"LT",s:"pintura",c:"Solvente",d:"Solvente thinner para diluicao de tintas epoxi"},
+  {n:"Thinner Generico",u:"LT",s:"pintura",c:"Solvente",d:"Thinner generico para limpeza de equipamentos de pintura"},
+  {n:"Aguarras Mineral",u:"LT",s:"pintura",c:"Solvente",d:"Aguarras mineral para diluicao e limpeza de pinceis"},
+  {n:"Acetona",u:"LT",s:"pintura",c:"Solvente",d:"Acetona para desengorduramento de superficie antes de pintar"},
+  {n:"MEK Metil Etil Cetona",u:"LT",s:"pintura",c:"Solvente",d:"Solvente MEK para limpeza e desengorduramento industrial"},
+  {n:"Xilol",u:"LT",s:"pintura",c:"Solvente",d:"Solvente xilol para tintas especiais e limpeza"},
+  // PINTURA — Ferramentas
+  {n:"Rolo de Pintura Espuma 9cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo espuma para acabamento em superficies lisas 9cm"},
+  {n:"Rolo de Pintura Espuma 15cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo espuma para acabamento 15cm"},
+  {n:"Rolo de Pintura Espuma 23cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo espuma para grandes superficies 23cm"},
+  {n:"Rolo de Pintura La 9cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo de la para superficies irregulares 9cm"},
+  {n:"Rolo de Pintura La 15cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo de la 15cm para pintura industrial"},
+  {n:"Rolo de Pintura La 23cm",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rolo de la para grandes superficies 23cm"},
+  {n:"Cabo para Rolo de Pintura",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Cabo plastico ou madeira para encaixe de rolos"},
+  {n:"Pincel 1 Polegada",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pincel cerdas naturais 1 polegada para detalhes e cantos"},
+  {n:"Pincel 2 Polegadas",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pincel cerdas naturais 2 polegadas para pintura manual"},
+  {n:"Pincel 3 Polegadas",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pincel cerdas naturais 3 polegadas para superficies medias"},
+  {n:"Pincel de Corte Angular",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pincel angular para recortes e cantos"},
+  {n:"Bandeja de Pintura",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Bandeja plastica com rampa para distribuicao de tinta"},
+  {n:"Pistola de Pintura Airless",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pistola de pintura airless sem ar para grandes areas"},
+  {n:"Bico para Pistola Airless",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Bico orificio de reposicao para pistola airless"},
+  {n:"Medidor de Espessura de Tinta",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Medidor de espessura de camada de tinta seca"},
+  {n:"Copo Ford para Viscosidade",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Copo Ford nr 4 para medicao de viscosidade de tinta"},
+  {n:"Rodo de Borracha para Epoxi",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Rodo borracha para espalhamento de tinta epoxi em piso"},
+  {n:"Espatula de Aco",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Espatula de aco para remocao de tinta velha"},
+  // PINTURA — Lixas
+  {n:"Lixa Metal G36",u:"UN",s:"pintura",c:"Lixa",d:"Lixa folha para metal grao 36 desbaste grosso"},
+  {n:"Lixa Metal G60",u:"UN",s:"pintura",c:"Lixa",d:"Lixa folha para metal grao 60"},
+  {n:"Lixa Metal G80",u:"UN",s:"pintura",c:"Lixa",d:"Lixa folha para metal grao 80"},
+  {n:"Lixa Metal G120",u:"UN",s:"pintura",c:"Lixa",d:"Lixa folha para metal grao 120"},
+  {n:"Lixa Metal G180",u:"UN",s:"pintura",c:"Lixa",d:"Lixa folha para metal grao 180 acabamento fino"},
+  {n:"Lixa Massa G80",u:"UN",s:"pintura",c:"Lixa",d:"Lixa massa papel grao 80"},
+  {n:"Lixa Massa G120",u:"UN",s:"pintura",c:"Lixa",d:"Lixa massa papel grao 120"},
+  {n:"Lixa D Agua G220",u:"UN",s:"pintura",c:"Lixa",d:"Lixa d agua grao 220 para lixamento entre demaos"},
+  {n:"Lixa D Agua G320",u:"UN",s:"pintura",c:"Lixa",d:"Lixa d agua grao 320 para acabamento fino"},
+  // PINTURA — Mascaramento
+  {n:"Fita Crepe 18mm",u:"RL",s:"pintura",c:"Mascaramento",d:"Fita crepe 18mm x 50m para mascaramento de pintura"},
+  {n:"Fita Crepe 24mm",u:"RL",s:"pintura",c:"Mascaramento",d:"Fita crepe 24mm x 50m para mascaramento"},
+  {n:"Fita Crepe 48mm",u:"RL",s:"pintura",c:"Mascaramento",d:"Fita crepe 48mm x 50m para areas maiores"},
+  {n:"Fita Crepe Alta Temperatura",u:"RL",s:"pintura",c:"Mascaramento",d:"Fita crepe resistente a alta temperatura para pintura"},
+  {n:"Plastico Protecao 4m",u:"M",s:"pintura",c:"Mascaramento",d:"Plastico filme 4m para cobertura de areas adjacentes"},
+  {n:"Plastico Protecao 2m",u:"M",s:"pintura",c:"Mascaramento",d:"Plastico filme 2m para mascaramento de pintura"},
+  // GERAL — Eletrico
+  {n:"Tomada Femea 20A 2P+T",u:"UN",s:"geral",c:"Eletrico",d:"Tomada femea industrial 2P+T 20A para ferramentas"},
+  {n:"Tomada Macho 20A 2P+T",u:"UN",s:"geral",c:"Eletrico",d:"Tomada macho industrial 2P+T 20A para ferramentas"},
+  {n:"Tomada Femea 30A Trifasica",u:"UN",s:"geral",c:"Eletrico",d:"Tomada femea industrial trifasica 3P+T 30A"},
+  {n:"Tomada Macho 30A Trifasica",u:"UN",s:"geral",c:"Eletrico",d:"Tomada macho industrial trifasica 3P+T 30A"},
+  {n:"Extensao Eletrica 10m 20A",u:"UN",s:"geral",c:"Eletrico",d:"Extensao eletrica 10m cabo 2,5mm quadrado 20A"},
+  {n:"Extensao Eletrica 20m 20A",u:"UN",s:"geral",c:"Eletrico",d:"Extensao eletrica 20m cabo 2,5mm quadrado 20A"},
+  {n:"Fita Isolante PVC",u:"RL",s:"geral",c:"Eletrico",d:"Fita isolante PVC 19mm x 20m preta"},
+  {n:"Fita Auto Fusao",u:"RL",s:"geral",c:"Eletrico",d:"Fita auto fusao para vedacao de emendas eletricas"},
+  {n:"Lampada LED 20W",u:"UN",s:"geral",c:"Eletrico",d:"Lampada LED bulbo 20W bivolt para iluminacao"},
+  {n:"Lampada LED Industrial 40W",u:"UN",s:"geral",c:"Eletrico",d:"Lampada LED industrial 40W para galpao"},
+  {n:"Disjuntor 16A Unipolar",u:"UN",s:"geral",c:"Eletrico",d:"Disjuntor termomagnetico 16A unipolar"},
+  {n:"Disjuntor 20A Unipolar",u:"UN",s:"geral",c:"Eletrico",d:"Disjuntor termomagnetico 20A unipolar"},
+  {n:"Cabo Eletrico 2.5mm Flexivel",u:"M",s:"geral",c:"Eletrico",d:"Cabo eletrico flexivel 2,5mm quadrado 750V"},
+  {n:"Cabo Eletrico 4.0mm Flexivel",u:"M",s:"geral",c:"Eletrico",d:"Cabo eletrico flexivel 4,0mm quadrado 750V"},
+  {n:"Abracadeira Nylon 200mm",u:"CX",s:"geral",c:"Eletrico",d:"Abracadeira de nylon 200mm branca CX 100un"},
+  // GERAL — Pneumatico
+  {n:"Mangueira de Ar 1/4 Espiral",u:"M",s:"geral",c:"Pneumatico",d:"Mangueira de ar comprimido 1/4 espiral PVC"},
+  {n:"Mangueira de Ar 3/8",u:"M",s:"geral",c:"Pneumatico",d:"Mangueira de ar comprimido 3/8 borracha"},
+  {n:"Engate Rapido Macho 1/4",u:"UN",s:"geral",c:"Pneumatico",d:"Engate rapido macho para ar comprimido 1/4"},
+  {n:"Engate Rapido Femea 1/4",u:"UN",s:"geral",c:"Pneumatico",d:"Engate rapido femea para ar comprimido 1/4"},
+  {n:"Filtro Regulador de Ar",u:"UN",s:"geral",c:"Pneumatico",d:"Filtro regulador de pressao com manometro 1/4"},
+  {n:"Oleo Lubrificador Ferramentas Pneumaticas",u:"LT",s:"geral",c:"Pneumatico",d:"Oleo para lubrificacao de ferramentas pneumaticas"},
+  // GERAL — Fixacao/Vedacao
+  {n:"Fita Veda Rosca PTFE 18mm",u:"RL",s:"geral",c:"Fixacao",d:"Fita PTFE veda rosca 18mm x 50m para tubulacoes"},
+  {n:"Silicone Industrial Cinza",u:"UN",s:"geral",c:"Fixacao",d:"Silicone industrial cinza alta temperatura para vedacao"},
+  {n:"Silicone Industrial Branco",u:"UN",s:"geral",c:"Fixacao",d:"Silicone industrial branco para vedacao geral"},
+  {n:"Cola Epoxi Bicomponente",u:"UN",s:"geral",c:"Fixacao",d:"Cola epoxi bicomponente em seringa para metal"},
+  {n:"Parafuso Auto Atarraxante Metal",u:"CX",s:"geral",c:"Fixacao",d:"Parafuso auto atarraxante para metal CX 100un"},
+  {n:"Bucha Nylon S6",u:"CX",s:"geral",c:"Fixacao",d:"Bucha nylon S6 para concreto CX 50un"},
+  {n:"Bucha Nylon S8",u:"CX",s:"geral",c:"Fixacao",d:"Bucha nylon S8 para concreto CX 50un"},
+  {n:"Bucha Nylon S10",u:"CX",s:"geral",c:"Fixacao",d:"Bucha nylon S10 para concreto CX 25un"},
+  // GERAL — Limpeza
+  {n:"Sabao em Pasta Industrial",u:"KG",s:"geral",c:"Limpeza",d:"Sabao industrial em pasta para limpeza de maos"},
+  {n:"Papel Toalha Rolo",u:"RL",s:"geral",c:"Limpeza",d:"Papel toalha folha dupla para banheiro industrial"},
+  {n:"Alcool 70% Liquido",u:"LT",s:"geral",c:"Limpeza",d:"Alcool etilico 70% para higienizacao de superficies"},
+  {n:"Estopa Industrial",u:"KG",s:"geral",c:"Limpeza",d:"Estopa pano multiuso para limpeza industrial"},
+  {n:"Vassoura Industrial",u:"UN",s:"geral",c:"Limpeza",d:"Vassoura de cerdas para limpeza de area industrial"},
+  {n:"Pa Coletora",u:"UN",s:"geral",c:"Limpeza",d:"Pa coletora plastica para limpeza de residuos"},
+  {n:"Saco de Lixo 100L Preto",u:"CX",s:"geral",c:"Limpeza",d:"Saco de lixo preto 100 litros CX 100un"},
+  {n:"Desengordurante Industrial",u:"LT",s:"geral",c:"Limpeza",d:"Desengordurante concentrado para metal e equipamentos"},
+  // GERAL — Sinalizacao
+  {n:"Cone de Sinalizacao 75cm",u:"UN",s:"geral",c:"Sinalizacao",d:"Cone de sinalizacao laranja 75cm com base pesada"},
+  {n:"Fita Zebrada Amarela Preta",u:"RL",s:"geral",c:"Sinalizacao",d:"Fita de sinalizacao zebrada amarela e preta 70m"},
+  {n:"Placa Obrigatorio EPI",u:"UN",s:"geral",c:"Sinalizacao",d:"Placa uso obrigatorio EPI fotoluminescente"},
+  {n:"Placa Proibido Fumar",u:"UN",s:"geral",c:"Sinalizacao",d:"Placa proibido fumar padrao ABNT"},
+  {n:"Cadeado LOTO 38mm",u:"UN",s:"geral",c:"Sinalizacao",d:"Cadeado de bloqueio LOTO vermelho 38mm"},
+  {n:"Corrente de Seguranca",u:"M",s:"geral",c:"Sinalizacao",d:"Corrente plastica vermelha/branca para isolamento de area"},
+  // GERAL — Escritorio
+  {n:"Caneta Marcadora Permanente Preta",u:"UN",s:"geral",c:"Escritorio",d:"Caneta marcadora permanente preta ponta grossa"},
+  {n:"Caneta Marcadora Permanente Branca",u:"UN",s:"geral",c:"Escritorio",d:"Caneta marcadora branca para superficies escuras"},
+  {n:"Giz de Cera para Marcacao",u:"CX",s:"geral",c:"Escritorio",d:"Giz de cera para marcacao em superficies metalicas CX 12un"},
+  {n:"Etiqueta Adesiva Branca",u:"CX",s:"geral",c:"Escritorio",d:"Etiqueta branca retangular para identificacao CX 100un"},
+  {n:"Lacre Plastico de Seguranca",u:"CX",s:"geral",c:"Escritorio",d:"Lacre plastico numerado para seguranca CX 100un"},
+  // ---- DO CATALOGO MASTER — CALDEIRARIA MATERIAIS ESTRUTURAIS ----
+  {n:"Chapa Aco Carbono ASTM A36 3mm (1/8)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 3mm (1/8). Uso geral em caldeiraria"},
+  {n:"Chapa Aco Carbono ASTM A36 6mm (1/4)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 6mm (1/4). Uso em tanques e estruturas"},
+  {n:"Chapa Aco Carbono ASTM A36 10mm (3/8)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 10mm (3/8)"},
+  {n:"Chapa Aco Carbono ASTM A36 12mm (1/2)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 12mm (1/2)"},
+  {n:"Chapa Aco Carbono ASTM A36 19mm (3/4)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 19mm (3/4)"},
+  {n:"Chapa Aco Carbono ASTM A36 25mm (1pol)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 25mm (1 polegada)"},
+  {n:"Chapa Aco Carbono ASTM A36 50mm (2pol)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco carbono ASTM A36 espessura 50mm (2 polegadas)"},
+  {n:"Chapa Aco Inox 304",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco inoxidavel 304 para ambientes quimicos e alimenticios"},
+  {n:"Chapa Aco Inox 316",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Chapa aco inoxidavel 316 alta resistencia a corrosao"},
+  {n:"Perfil I (IPE / IPN)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Perfil estrutural I para vigas e suportes industriais"},
+  {n:"Perfil U (UPN / UNP)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Perfil estrutural U para guias e calhas industriais"},
+  {n:"Perfil H (HEB / HEA)",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Perfil H de alta resistencia para estruturas pesadas"},
+  {n:"Perfil L Cantoneira",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Cantoneira perfil L para reforcos e suportes"},
+  {n:"Tubo Aco Carbono SCH 40",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Tubo aco carbono schedule 40 para tubulacoes industriais"},
+  {n:"Tubo Aco Carbono SCH 80",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Tubo aco carbono schedule 80 para alta pressao"},
+  {n:"Tubo Aco Inox SCH 40",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Tubo aco inox schedule 40 para tubulacoes quimicas"},
+  {n:"Barra Redonda Aco",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Barra redonda de aco carbono para eixos e pinos"},
+  {n:"Barra Quadrada Aco",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Barra quadrada de aco carbono para estruturas"},
+  {n:"Barra Sextavada Aco",u:"KG",s:"caldeiraria",c:"Material Estrutural",d:"Barra sextavada de aco carbono para fabricacao de parafusos"},
+  {n:"Flange ANSI 150 LB",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange aco carbono ANSI B16.5 classe 150 LB"},
+  {n:"Flange ANSI 300 LB",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange aco carbono ANSI B16.5 classe 300 LB alta pressao"},
+  {n:"Flange DIN PN 10",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange DIN PN10 para tubulacoes europeias"},
+  {n:"Flange DIN PN 16",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange DIN PN16 pressao nominal 16 bar"},
+  {n:"Flange Cego ANSI",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange cego ANSI para fechamento de tubulacao"},
+  {n:"Flange Slip On ANSI",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange Slip On para solda de topo em tubulacao"},
+  {n:"Flange Weld Neck ANSI",u:"UN",s:"caldeiraria",c:"Flange",d:"Flange Weld Neck para alta pressao e temperatura"},
+  {n:"Cotovelo 90 graus SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Cotovelo 90 graus aco carbono schedule 40"},
+  {n:"Cotovelo 45 graus SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Cotovelo 45 graus aco carbono schedule 40"},
+  {n:"Tee Igual SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Tee igual aco carbono schedule 40 para derivacao"},
+  {n:"Reducao Concentrica SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Reducao concentrica aco carbono schedule 40"},
+  {n:"Reducao Excentrica SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Reducao excentrica aco carbono schedule 40"},
+  {n:"Luva de Uniao SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Luva de uniao aco carbono para emenda de tubos"},
+  {n:"Cap Tampao SCH 40",u:"UN",s:"caldeiraria",c:"Conexao",d:"Cap tampao aco carbono para fechamento de extremidade"},
+  {n:"Parafuso Estrutural Alta Resistencia A325",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso estrutural alta resistencia ASTM A325 CX 25un"},
+  {n:"Parafuso Estrutural Alta Resistencia A490",u:"CX",s:"caldeiraria",c:"Fixacao",d:"Parafuso estrutural alta resistencia ASTM A490 CX 25un"},
+  // ---- DO CATALOGO MASTER — JATEAMENTO ----
+  {n:"Granilha de Aco G25",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granilha de aco angular G25 para perfil de rugosidade Sa2.5"},
+  {n:"Granilha de Aco G40",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granilha de aco angular G40 para perfil de rugosidade medio"},
+  {n:"Granilha de Aco G50",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Granilha de aco angular G50 para acabamento fino"},
+  {n:"Areia Industrial Tratada",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Areia industrial seca tratada para jateamento de superficie"},
+  {n:"Microesfera de Vidro",u:"KG",s:"jateamento",c:"Abrasivo Jato",d:"Microesfera de vidro para jato fino e polimento de superficie"},
+  {n:"Cabine de Jateamento",u:"UN",s:"jateamento",c:"Equipamento Jato",d:"Cabine de jateamento abrasivo com exaustao e recuperacao"},
+  {n:"Compressor Industrial para Jato",u:"UN",s:"jateamento",c:"Equipamento Jato",d:"Compressor industrial de alta vazao para jateamento abrasivo"},
+  {n:"EPI Completo para Jatista",u:"KT",s:"jateamento",c:"EPI Jato",d:"Kit EPI completo para jatista: capacete, macacao, luvas, perneiras e respirador"},
+  // ---- DO CATALOGO MASTER — PINTURA INDUSTRIAL ----
+  {n:"Primer Epoxi Bicomponente",u:"LT",s:"pintura",c:"Tinta",d:"Primer epoxi bicomponente anticorrosivo para metalicas. Cod cat: PIN-001"},
+  {n:"Tinta Epoxi Alta Espessura",u:"LT",s:"pintura",c:"Tinta",d:"Tinta epoxi alta espessura para protecao de tanques e estruturas"},
+  {n:"Tinta PU Poliuretano Acabamento",u:"LT",s:"pintura",c:"Tinta",d:"Tinta poliuretano acabamento brilhante resistente a UV e intemperies"},
+  {n:"Tinta Anticorrosiva",u:"LT",s:"pintura",c:"Tinta",d:"Tinta anticorrosiva de alta performance para ambientes agressivos"},
+  {n:"Solventes e Diluentes Industriais",u:"LT",s:"pintura",c:"Solvente",d:"Solventes e diluentes para tintas industriais epoxi e PU"},
+  {n:"Pistola de Pintura Convencional",u:"UN",s:"pintura",c:"Ferramentas Pintura",d:"Pistola de pintura convencional HVLP para aplicacao manual"},
+  {n:"Cabine de Pintura Industrial",u:"UN",s:"pintura",c:"Equipamento Pintura",d:"Cabine de pintura industrial com exaustao e iluminacao"},
+];
+// ============================================================
+
+const BANCO_CAT_CORES = {
+  'EPI':'#dc2626','EPI Jato':'#1d4ed8','EPI Pintura':'#166534',
+  'Abrasivos':'#92400e','Abrasivo Jato':'#1e40af','Lixa':'#6d28d9',
+  'Consumível Solda':'#b45309','Gases':'#0369a1',
+  'Ferramentas':'#374151','Ferramentas Pintura':'#374151','Componentes Jato':'#1e40af',
+  'Tinta':'#166534','Solvente':'#7c3aed',
+  'Elétrico':'#d97706','Pneumático':'#0284c7','Fixação':'#4b5563',
+  'Limpeza':'#047857','Sinalização':'#b45309','Escritório':'#6b7280',
+  'Mascaramento':'#9333ea'
+};
+
+function bancoBuscar(q){
+  if(!q||q.length<2) return [];
+  const v=q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  return BANCO_MATERIAIS.filter(m=>{
+    const nome=m.n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const desc=m.d.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const cat=m.c.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    return nome.includes(v)||desc.includes(v)||cat.includes(v);
+  }).slice(0,30);
+}
+
+let _bancoIdx=-1;
+function onEntItemSearch(){
+  const val=document.getElementById('ent-item-srch').value;
+  _bancoIdx=-1;
+  // Check existing stock first
+  const found=findItemBySearch(val);
+  document.getElementById('ent-item-id').value=found?found.id:'';
+  if(found){
+    document.getElementById('ent-item-srch').style.borderColor='var(--success)';
+    const unEl=document.getElementById('ent-un');if(unEl&&found.unidade) unEl.value=found.unidade;
+  } else {
+    document.getElementById('ent-item-srch').style.borderColor=val?'':'';
+  }
+  renderBancoDropdown(val);
+}
+
+function renderBancoDropdown(q){
+  const dd=document.getElementById('banco-dropdown');
+  if(!q||q.length<2){dd.style.display='none';return;}
+  const estoqueItens=getItens().filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase()));
+  const bancoRes=bancoBuscar(q).filter(b=>!estoqueItens.some(e=>e.descricao.toLowerCase()===b.n.toLowerCase()));
+  if(!estoqueItens.length&&!bancoRes.length){dd.style.display='none';return;}
+  let html='';
+  if(estoqueItens.length){
+    html+=`<div class="banco-secao">📦 Já no Estoque</div>`;
+    html+=estoqueItens.slice(0,5).map((i,idx)=>{
+      const corCat=BANCO_CAT_CORES[i.categoria]||'#374151';
+      return`<div class="banco-item" data-idx="${idx}" data-tipo="estoque" data-id="${i.id}" data-nome="${i.descricao}" data-un="${i.unidade||'UN'}" data-setor="${i.setor||'geral'}" onclick="bancSelect(this)">
+        <div>
+          <div class="bi-nome">${i.descricao}</div>
+          <div class="bi-desc">Estoque atual: <b>${i.qtdAtual||0} ${i.unidade||'UN'}</b></div>
+          <div class="bi-tags"><span class="bi-un">${i.unidade||'UN'}</span>${setorBadge(i.setor)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(bancoRes.length){
+    html+=`<div class="banco-secao">📚 Banco de Materiais (${bancoRes.length} resultado${bancoRes.length>1?'s':''})</div>`;
+    html+=bancoRes.map((m,idx)=>{
+      const cor=BANCO_CAT_CORES[m.c]||'#374151';
+      return`<div class="banco-item" data-tipo="banco" data-nome="${m.n}" data-un="${m.u}" data-setor="${m.s}" onclick="bancSelect(this)">
+        <div>
+          <div class="bi-nome">${m.n}</div>
+          <div class="bi-desc">${m.d}</div>
+          <div class="bi-tags">
+            <span class="bi-un">${m.u}</span>
+            <span class="bi-cat" style="background:${cor}22;color:${cor}">${m.c}</span>
+            ${setorBadge(m.s)}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  dd.innerHTML=html;
+  dd.style.display='block';
+}
+
+function bancSelect(el){
+  const nome=el.dataset.nome;
+  const un=el.dataset.un;
+  const setor=el.dataset.setor;
+  const tipo=el.dataset.tipo;
+  document.getElementById('ent-item-srch').value=nome;
+  document.getElementById('ent-un').value=un;
+  // Fill setor dropdown from banco or existing item
+  const setorEl=document.getElementById('ent-setor');
+  if(setorEl) setorEl.value=setor||'geral';
+  document.getElementById('banco-dropdown').style.display='none';
+  if(tipo==='estoque'){
+    const id=el.dataset.id;
+    document.getElementById('ent-item-id').value=id;
+    document.getElementById('ent-item-srch').style.borderColor='var(--success)';
+    // Use item's actual setor
+    const item=getItens().find(i=>i.id===id);
+    if(item&&setorEl) setorEl.value=item.setor||setor||'geral';
+  } else {
+    const found=getItens().find(i=>i.descricao.toLowerCase()===nome.toLowerCase());
+    document.getElementById('ent-item-id').value=found?found.id:'';
+    document.getElementById('ent-item-srch').style.borderColor=found?'var(--success)':'var(--info)';
+    if(found&&setorEl) setorEl.value=found.setor||setor||'geral';
+  }
+  document.getElementById('ent-item-srch').dataset.setorSugerido=setor;
+  document.getElementById('ent-un').focus();
+}
+
+function bancoDdKey(e){
+  const dd=document.getElementById('banco-dropdown');
+  if(dd.style.display==='none') return;
+  const items=dd.querySelectorAll('.banco-item');
+  if(e.key==='ArrowDown'){e.preventDefault();_bancoIdx=Math.min(_bancoIdx+1,items.length-1);items.forEach((x,i)=>x.classList.toggle('sel',i===_bancoIdx));if(items[_bancoIdx])items[_bancoIdx].scrollIntoView({block:'nearest'});}
+  else if(e.key==='ArrowUp'){e.preventDefault();_bancoIdx=Math.max(_bancoIdx-1,0);items.forEach((x,i)=>x.classList.toggle('sel',i===_bancoIdx));if(items[_bancoIdx])items[_bancoIdx].scrollIntoView({block:'nearest'});}
+  else if(e.key==='Enter'&&_bancoIdx>=0){e.preventDefault();bancSelect(items[_bancoIdx]);}
+  else if(e.key==='Escape'){dd.style.display='none';}
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.ent-item-wrap')) document.getElementById('banco-dropdown').style.display='none';
+});
+
+
+// ======= GOOGLE DRIVE =======
+const DRIVE_CFG_KEY = 'ei_drive_config';
+
+function getDriveCfg(){ try{return JSON.parse(localStorage.getItem(DRIVE_CFG_KEY))||{}}catch{return{}} }
+function setDriveCfg(d){ localStorage.setItem(DRIVE_CFG_KEY, JSON.stringify(d)) }
+
+const DRIVE_CLIENT_ID_DEFAULT = '375051221334-d4nlc3jrmdadnkjfk8oqnunf3bmn56v7.apps.googleusercontent.com';
+
+function driveBackup(){
+  const overlay = document.getElementById('modal-drive-overlay');
+  overlay.classList.add('open');
+  // Auto-fill client ID if not yet saved
+  let cfg = getDriveCfg();
+  if(!cfg.clientId){
+    cfg.clientId = DRIVE_CLIENT_ID_DEFAULT;
+    cfg.folderName = 'Estoque Industrial';
+    setDriveCfg(cfg);
+  }
+  document.getElementById('drive-setup').style.display='none';
+  document.getElementById('drive-ready').style.display='block';
+  document.getElementById('drive-progress').style.display='none';
+  document.getElementById('drive-folder-display').value = cfg.folderName || 'Estoque Industrial';
+  document.getElementById('drive-ready-info').textContent = 'Conta: robsonclaser@gmail.com';
+}
+
+function salvarConfigDrive(){
+  const clientId = document.getElementById('drive-client-id').value.trim();
+  const folderName = document.getElementById('drive-folder-name').value.trim() || 'Estoque Industrial';
+  if(!clientId || !clientId.includes('apps.googleusercontent.com')){
+    alert2('Client ID inválido. Deve terminar com .apps.googleusercontent.com');
+    return;
+  }
+  setDriveCfg({clientId, folderName});
+  document.getElementById('drive-setup').style.display='none';
+  document.getElementById('drive-ready').style.display='block';
+  document.getElementById('drive-folder-display').value = folderName;
+  document.getElementById('drive-ready-info').textContent = 'Configurado! Clique para entrar com sua conta Google.';
+  ok2('Configuração salva!');
+}
+
+function driveReconfigurar(){
+  const cfg = getDriveCfg();
+  document.getElementById('drive-client-id').value = cfg.clientId || '';
+  document.getElementById('drive-folder-name').value = cfg.folderName || 'Estoque Industrial';
+  document.getElementById('drive-setup').style.display='block';
+  document.getElementById('drive-ready').style.display='none';
+}
+
+function closeDriveModal(e){
+  if(e.target===document.getElementById('modal-drive-overlay'))
+    document.getElementById('modal-drive-overlay').classList.remove('open');
+}
+
+function driveSetProgress(msg){
+  document.getElementById('drive-setup').style.display='none';
+  document.getElementById('drive-ready').style.display='none';
+  document.getElementById('drive-progress').style.display='block';
+  document.getElementById('drive-progress-msg').textContent = msg;
+}
+
+async function driveAutenticar(){
+  const cfg = getDriveCfg();
+  if(!cfg.clientId){ alert2('Configure o Client ID primeiro'); return; }
+  driveSetProgress('Autenticando com Google...');
+  try {
+    const token = await new Promise((resolve, reject) => {
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: cfg.clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (resp) => {
+          if(resp.error) reject(new Error(resp.error));
+          else resolve(resp.access_token);
+        }
+      });
+      client.requestAccessToken();
+    });
+    await driveEnviarArquivos(token, cfg);
+  } catch(err) {
+    document.getElementById('drive-setup').style.display='none';
+    document.getElementById('drive-ready').style.display='block';
+    document.getElementById('drive-progress').style.display='none';
+    alert2('Erro de autenticação: '+err.message);
+  }
+}
+
+async function driveEnviarArquivos(token, cfg){
+  const folderName = cfg.folderName || 'Estoque Industrial';
+  driveSetProgress('Localizando pasta "'+folderName+'" no Drive...');
+
+  // 1. Find or create folder
+  const searchResp = await fetch(
+    'https://www.googleapis.com/drive/v3/files?q=name="'+encodeURIComponent(folderName)+'" and mimeType="application/vnd.google-apps.folder" and trashed=false&fields=files(id,name)',
+    {headers:{Authorization:'Bearer '+token}}
+  );
+  const searchData = await searchResp.json();
+  let folderId;
+  if(searchData.files && searchData.files.length > 0){
+    folderId = searchData.files[0].id;
+  } else {
+    driveSetProgress('Criando pasta "'+folderName+'"...');
+    const createResp = await fetch('https://www.googleapis.com/drive/v3/files',{
+      method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({name:folderName, mimeType:'application/vnd.google-apps.folder'})
+    });
+    const createData = await createResp.json();
+    folderId = createData.id;
+  }
+
+  // 2. Upload backup JSON
+  const hoje = today();
+  const nomeJson = 'backup_estoque_'+hoje+'.json';
+  driveSetProgress('Enviando '+nomeJson+'...');
+  const dados = {versao:'1.0',data:new Date().toISOString(),itens:getItens(),movimentacoes:getMovs(),fornecedores:getForn()};
+  const jsonBlob = new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+  await driveUploadFile(token, folderId, nomeJson, jsonBlob, 'application/json');
+
+  // 3. Upload HTML system file
+  driveSetProgress('Enviando estoque_industrial.html...');
+  const htmlContent = await fetch(window.location.href).then(r=>r.text()).catch(()=>null);
+  if(htmlContent){
+    const htmlBlob = new Blob([htmlContent],{type:'text/html'});
+    await driveUploadFile(token, folderId, 'estoque_industrial.html', htmlBlob, 'text/html');
+  }
+
+  // Done
+  document.getElementById('drive-progress').style.display='none';
+  document.getElementById('drive-ready').style.display='block';
+  ok2('✅ Arquivos salvos na pasta "'+folderName+'" do Drive!');
+}
+
+async function driveUploadFile(token, folderId, filename, blob, mimeType){
+  const meta = {name: filename, parents: [folderId]};
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file', blob);
+  // Check if file already exists to update instead of duplicate
+  const searchResp = await fetch(
+    'https://www.googleapis.com/drive/v3/files?q=name="'+encodeURIComponent(filename)+'" and "'+folderId+'" in parents and trashed=false&fields=files(id)',
+    {headers:{Authorization:'Bearer '+token}}
+  );
+  const searchData = await searchResp.json();
+  if(searchData.files && searchData.files.length > 0){
+    // Update existing
+    const fileId = searchData.files[0].id;
+    await fetch('https://www.googleapis.com/upload/drive/v3/files/'+fileId+'?uploadType=multipart',{
+      method:'PATCH', headers:{Authorization:'Bearer '+token}, body:form
+    });
+  } else {
+    // Create new
+    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+      method:'POST', headers:{Authorization:'Bearer '+token}, body:form
+    });
+  }
+}
+
+// ======= PDF PREVIEW =======
+function previewPdf(doc, filename){
+  const blob=doc.output('blob');
+  const url=URL.createObjectURL(blob);
+  const frame=document.getElementById('pdf-preview-frame');
+  const overlay=document.getElementById('modal-pdf-overlay');
+  document.getElementById('pdf-preview-title').textContent='Visualizar: '+filename;
+  frame.src=url;
+  overlay.classList.add('open');
+  const btn=document.getElementById('pdf-download-btn');
+  btn.onclick=()=>{
+    const a=document.createElement('a');a.href=url;a.download=filename;a.click();
+    ok2('PDF baixado: '+filename);
+  };
+}
+function closePdfPreview(e){
+  if(e.target===document.getElementById('modal-pdf-overlay'))
+    document.getElementById('modal-pdf-overlay').classList.remove('open');
+}
+
+// ======= PDF ITEM (HISTÓRICO DO ITEM) =======
+function pdfItemMovs(id){
+  const item=getItens().find(i=>i.id===id);if(!item)return;
+  const movs=getMovs().filter(m=>m.itemId===id).sort((a,b)=>b.data.localeCompare(a.data));
+  const entradas=movs.filter(m=>m.tipo==='entrada'||m.tipo==='estorno');
+  const saidas=movs.filter(m=>m.tipo==='saida');
+  const ajustes=movs.filter(m=>m.tipo==='ajuste');
+  const totalEnt=entradas.reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+  const totalSai=saidas.reduce((a,m)=>a+parseFloat(m.quantidade||0),0);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  // Header
+  doc.setFillColor(26,26,26);doc.rect(0,0,210,18,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('ESTOQUE INDUSTRIAL',10,12);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Emitido em: '+fmtDate(today()),150,12);
+  // Item title
+  doc.setTextColor(0,0,0);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text(item.descricao,10,28);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+  const setorlbl={caldeiraria:'Caldeiraria',jateamento:'Jateamento',pintura:'Pintura',geral:'Geral'};
+  doc.text('Codigo: '+(item.codigo||'-')+'  Setor: '+(setorlbl[item.setor]||item.setor||'-')+'  Un.: '+(item.unidade||'-')+'  Fornecedor: '+(item.fornecedorPrincipal||'-'),10,34);
+  // Summary
+  doc.setFillColor(240,255,244);doc.rect(10,38,55,16,'F');
+  doc.setTextColor(22,163,74);doc.setFontSize(8);doc.setFont('helvetica','bold');
+  doc.text('ESTOQUE ATUAL',12,44);doc.setFontSize(14);
+  doc.text(fmtQtd(parseFloat(item.qtdAtual||0))+' '+(item.unidade||''),12,52);
+  doc.setFillColor(220,252,231);doc.rect(70,38,55,16,'F');
+  doc.setTextColor(22,163,74);doc.setFontSize(8);
+  doc.text('TOTAL ENTRADAS',72,44);doc.setFontSize(14);doc.text(fmtQtd(totalEnt),72,52);
+  doc.setFillColor(254,226,226);doc.rect(130,38,55,16,'F');
+  doc.setTextColor(220,38,38);doc.setFontSize(8);
+  doc.text('TOTAL SAIDAS',132,44);doc.setFontSize(14);doc.text(fmtQtd(totalSai),132,52);
+  let y=62;
+  if(entradas.length){
+    doc.setTextColor(22,163,74);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('ENTRADAS ('+entradas.length+')',10,y);y+=4;
+    doc.autoTable({startY:y,head:[['Data','Qtd','Unidade','Fornecedor','NF','Obs']],
+      body:entradas.map(m=>[fmtDate(m.data),'+'+fmtQtd(m.quantidade),item.unidade||'',m.fornecedor||'-',m.nf||'-',m.obs||'-']),
+      styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[22,163,74],textColor:255,fontSize:8},
+      alternateRowStyles:{fillColor:[240,255,244]},margin:{left:10,right:10}});
+    y=doc.lastAutoTable.finalY+8;
+  }
+  if(saidas.length){
+    if(y>240){doc.addPage();y=15;}
+    doc.setTextColor(220,38,38);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('SAIDAS ('+saidas.length+')',10,y);y+=4;
+    doc.autoTable({startY:y,head:[['Data','Qtd','Unidade','Setor','Funcionario','Obs']],
+      body:saidas.map(m=>[fmtDate(m.data),'-'+fmtQtd(m.quantidade),item.unidade||'',m.setor||'-',m.funcionario||'-',m.obs||'-']),
+      styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[220,38,38],textColor:255,fontSize:8},
+      alternateRowStyles:{fillColor:[254,242,242]},margin:{left:10,right:10}});
+    y=doc.lastAutoTable.finalY+8;
+  }
+  if(ajustes.length){
+    if(y>240){doc.addPage();y=15;}
+    doc.setTextColor(55,48,163);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('AJUSTES ('+ajustes.length+')',10,y);y+=4;
+    doc.autoTable({startY:y,head:[['Data','Saldo Anterior','Saldo Novo','Diferenca','Motivo']],
+      body:ajustes.map(m=>[fmtDate(m.data),fmtQtd(m.saldoAnterior||0),fmtQtd(m.saldoNovo||0),(parseFloat(m.diff||0)>=0?'+':'')+fmtQtd(m.diff||0),m.obs||'-']),
+      styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[55,48,163],textColor:255,fontSize:8},margin:{left:10,right:10}});
+  }
+  const fname='movimentacoes_'+item.descricao.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase()+'.pdf';
+  previewPdf(doc,fname);
+}
+
+// ======= INIT =======
+document.addEventListener('DOMContentLoaded',()=>{
+  renderDash();
+  const now=new Date();
+  const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('flt-hist-mes').value=mes;
+  document.getElementById('rel-mes').value=mes;
+  updateFornDatalist('list-forn');updateFornDatalist('list-forn-item');
+  updateItensDatalist('list-itens-ent');updateItensDatalist('list-itens-sai');
+});
+</script>
+</body>
+</html>
